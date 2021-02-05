@@ -5,6 +5,8 @@
 void print_dungeon(); //Prints out the dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
 void create_rooms(); //Creates 6 random rooms of random but minimum size
+void create_paths(); //Creates paths between each room
+void create_stairs(); //Creates one stair that goes up and one that goes down
 
 //Globals -I'm pretty sure we are allowed to use?
 
@@ -18,9 +20,50 @@ int main(int argc, char *argv[]) {
 
   set_dungeon();
   create_rooms();
+  create_stairs();
+  create_paths();
   print_dungeon();
 
   return 0;
+}
+
+void create_stairs() {
+	int upperstair = 1;
+	for (int y = 0; y < 21; y++)    
+        {
+                for (int x = 0; x < 80; x++) 
+                {
+                	if (dungeon[y][x] == 1 && upperstair)
+			{
+				dungeon[y][x] = 2;
+				upperstair = 0;
+			}
+                }
+        }
+	int lowerstair = 1;
+        for (int y = 21; y >= 0; y--)
+        {
+                for (int x = 80; x >= 0; x--)
+                {
+                        if (dungeon[y][x] == 1 && lowerstair)
+                        {
+                                dungeon[y][x] = 3;
+                                lowerstair = 0;
+                        }
+                }
+        }
+
+}
+
+// creates the paths between rooms
+void create_paths(){
+	for (int y = 0; y < 21; y++) 
+	{
+		for (int x = 0; x < 80; x++)
+		{
+			
+		}
+	}
 }
 
 void create_rooms(){
@@ -126,10 +169,18 @@ void print_dungeon(){
       {
 	printf(".");
       }
-      else
+      else if(dungeon[r][c] == 2)
       {
-	printf("#");
+	printf(">");
       }
+      else if(dungeon[r][c] == 3)
+	{
+	printf("<");
+	}
+      else
+	{
+	printf("#");
+	}
     }
     printf("\n");
   }
