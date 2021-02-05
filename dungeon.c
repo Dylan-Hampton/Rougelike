@@ -35,7 +35,7 @@ void create_stairs() {
                 {
                 	if (dungeon[y][x] == 1 && upperstair)
 			{
-				dungeon[y][x] = 2;
+				dungeon[y + 1][x + 1] = 2;
 				upperstair = 0;
 			}
                 }
@@ -47,7 +47,7 @@ void create_stairs() {
                 {
                         if (dungeon[y][x] == 1 && lowerstair)
                         {
-                                dungeon[y][x] = 3;
+                                dungeon[y - 1][x - 1] = 3;
                                 lowerstair = 0;
                         }
                 }
