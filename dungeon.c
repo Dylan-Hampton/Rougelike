@@ -42,21 +42,33 @@ void create_rooms(){
      {
        int y = y_coord+r;
        int x = x_coord+c;
-       
+
+       //Used to check if out of bounds
        if((y > 20 || y < 0) || (x > 79 || x < 0) || y+y_dim > 20 || x+x_dim > 80)
        {
 	 placement_successful = 0;
-       }//Used to check if out of bounds
-       
+       }
+
+       //Checks each corner for overlap
        else if(dungeon[y][x] != 0 || dungeon[y + y_dim][x] != 0 ||
 	  dungeon[y][x+x_dim] != 0 || dungeon[y+y_dim][x+x_dim] != 0)
        {
-	 //Checks each corner for overlap
 	 placement_successful = 0;
        }
+
+       //Checks if two rooms are touching
+       else if (dungeon[y-1][x] != 0 || dungeon[y][x-1] != 0 ||
+		dungeon[y-1][x+x_dim] != 0 || dungeon[y][(x+x_dim)+1] != 0 ||
+		dungeon[y+y_dim+1][x] != 0 ||dungeon[y+y_dim][x-1] != 0 ||
+		dungeon[y+y_dim+1][x+x_dim] != 0 ||dungeon[y+y_dim][(x+x_dim)+1] != 0)
+	 {
+	   placement_successful = 0;
+	 }
+       
      }
    }
-   
+
+   //Sets cells if place is available
    if(placement_successful)
    {
      for(int r = y_coord; r < y_coord + y_dim; r++)
@@ -64,17 +76,17 @@ void create_rooms(){
        for(int c = x_coord; c < x_coord + x_dim; c++)
        {
 	 dungeon[r][c] = 1;
-	   
-       }//Sets cells if place is available
-     }
+       }
+   }
      
        roomcount++;
        attempts = 0;
    }
-   
+
+   //Ends if too many failed attempts in a row
    else
    {
-       attempts++; //Ends if too many failed attempts in a row
+       attempts++; 
    }
  }
 }
