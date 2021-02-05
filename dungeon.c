@@ -59,12 +59,12 @@ void create_rooms(){
        //Checks if two rooms are touching by checking the perimeter of room
        else
        {
-	 for(int j = x_coord; j <= x_dim; j++)
+	 for(int j = x_coord; j <= x_coord + x_dim; j++)
 	   {
-	     for(int i = y_coord; i <= y_dim; i++)
+	     for(int i = y_coord; i <= y_coord + y_dim; i++)
 	     {
-	       if(dungeon[y+i][x-1] != 0 || dungeon[y-1][x+j] != 0 ||
-		  dungeon[(y+y_dim)+1][x+j] != 0 || dungeon[y+i][(x + x_dim)+1] != 0)
+	       if(dungeon[i][x_coord-1] != 0 || dungeon[y_coord-1][j] != 0 ||
+		  dungeon[(y_coord+y_dim)+1][j] != 0 || dungeon[i][(x_coord + x_dim)+1] != 0)
 		 {
 		   placement_successful = 0;
 		 }
