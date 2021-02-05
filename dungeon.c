@@ -34,7 +34,7 @@ void create_rooms(){
    int y_coord = rand() % 21; //0-20
    int x_dim = (rand() % 4) + 4; //4-7 can change if want
    int y_dim = (rand() % 4) + 3; //3-6 can change if want
-   int  placement_successful = 1; //Can't get boolean to work? But works like bool
+   int placement_successful = 1; //Can't get boolean to work? But works like bool
 
    for(int r = -1; r <= 1; r++)
    {
@@ -63,8 +63,8 @@ void create_rooms(){
 	   {
 	     for(int i = y_coord; i <= y_dim; i++)
 	     {
-	       if(dungeon[y+i][x-1] != 0 || dungeon[y-1][x+j] ||
-		  dungeon[(y+y_dim)+1][x+j] != 0 || dungeon[(x+x_dim)+1][y+i] != 0)
+	       if(dungeon[y+i][x-1] != 0 || dungeon[y-1][x+j] != 0 ||
+		  dungeon[(y+y_dim)+1][x+j] != 0 || dungeon[y+i][(x + x_dim)+1] != 0)
 		 {
 		   placement_successful = 0;
 		 }
