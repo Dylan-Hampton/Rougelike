@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+//Constants
+#define DUNGEON_ROW 21
+#define DUNGEON_COL 80
+
 void print_dungeon(); //Prints out the dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
 void create_rooms(); //Creates 6 random rooms of random but minimum size
@@ -10,7 +14,7 @@ void create_stairs(); //Creates one stair that goes up and one that goes down
 
 //Globals -I'm pretty sure we are allowed to use?
 
-int dungeon[21][80];//Used ints to make defining hardness easier later
+int dungeon[DUNGEON_ROW][DUNGEON_COL];//Used ints to make defining hardness easier later
 
 
 int main(int argc, char *argv[]) {
@@ -29,25 +33,25 @@ int main(int argc, char *argv[]) {
 
 void create_stairs() {
 	int upperstair = 1;
-	for (int y = 0; y < 21; y++)    
+	for (int y = 0; y < DUNGEON_ROW; y++)    
         {
-                for (int x = 0; x < 80; x++) 
+                for (int x = 0; x < DUNGEON_COL; x++) 
                 {
                 	if (dungeon[y][x] == 1 && upperstair)
 			{
-				dungeon[y + 1][x + 1] = 2;
+				dungeon[y + 1][x + 1] = 3;
 				upperstair = 0;
 			}
                 }
         }
 	int lowerstair = 1;
-        for (int y = 21; y >= 0; y--)
+        for (int y =  DUNGEON_ROW; y >= 0; y--)
         {
-                for (int x = 80; x >= 0; x--)
+                for (int x = DUNGEON_COL; x >= 0; x--)
                 {
                         if (dungeon[y][x] == 1 && lowerstair)
                         {
-                                dungeon[y - 1][x - 1] = 3;
+                                dungeon[y - 1][x - 1] = 4;
                                 lowerstair = 0;
                         }
                 }
@@ -57,9 +61,9 @@ void create_stairs() {
 
 // creates the paths between rooms
 void create_paths(){
-	for (int y = 0; y < 21; y++) 
+	for (int y = 0; y < DUNGEON_ROW; y++) 
 	{
-		for (int x = 0; x < 80; x++)
+		for (int x = 0; x < DUNGEON_COL; x++)
 		{
 			
 		}
@@ -73,8 +77,8 @@ void create_rooms(){
 
  while(roomcount != 6 && attempts < 2000)
  {
-   int x_coord = rand() % 80; //0-79
-   int y_coord = rand() % 21; //0-20
+   int x_coord = rand() % DUNGEON_COL; //0-79
+   int y_coord = rand() % DUNGEON_ROW; //0-20
    int x_dim = (rand() % 4) + 4; //4-7 can change if want
    int y_dim = (rand() % 4) + 3; //3-6 can change if want
    int placement_successful = 1; //Can't get boolean to work? But works like bool
@@ -87,7 +91,7 @@ void create_rooms(){
        int x = x_coord+c;
 
        //Used to check if out of bounds
-       if((y > 20 || y < 0) || (x > 79 || x < 0) || y+y_dim > 20 || x+x_dim > 80)
+       if((y > DUNGEON_ROW - 1 || y < 0) || (x > DUNGEON_COL - 1 || x < 0) || y+y_dim > DUNGEON_ROW - 1 || x+x_dim > DUNGEON_COL - 1)
        {
 	 placement_successful = 0;
        }
@@ -142,9 +146,9 @@ void create_rooms(){
 
 void set_dungeon(){
   //Change to spaces
-  for(int i = 0; i < 21; i++)
+  for(int i = 0; i < DUNGEON_ROW; i++)
   {
-    for(int j = 0; j < 80; j++)
+    for(int j = 0; j < DUNGEON_COL; j++)
     {
       dungeon[i][j] = 0;
     }
@@ -155,32 +159,43 @@ void set_dungeon(){
 //A 0 == rock(space)
 //A 1 == room floor('.')
 //A 2 == corridor('#')
+//A 3 == upstairs('>')
+//A 4 == downstairs('<')
 void print_dungeon(){
 
-  for(int r = 0; r < 21; r++)
+  for(int r = 0; r < DUNGEON_ROW; r++)
   {
-    for(int c = 0; c < 80; c++)
+    for(int c = 0; c < DUNGEON_COL; c++)
     {
-      if(dungeon[r][c] == 0)
+
+      switch(dungeon[r][c])
       {
-	printf(" ");
+        case 0:
+	  printf(" ");
+	  break;
+
+        case 1:
+	  printf(".");
+	  break;
+
+        case 2:
+	  printf("#");
+	  break;
+
+        case 3:
+	  printf(">");
+	  break;
+
+        case 4:
+	  printf("<");
+	  break;
+
+	//E for error
+        default:
+	  printf("E");
+	  break;
       }
-      else if(dungeon[r][c] == 1)
-      {
-	printf(".");
-      }
-      else if(dungeon[r][c] == 2)
-      {
-	printf(">");
-      }
-      else if(dungeon[r][c] == 3)
-	{
-	printf("<");
-	}
-      else
-	{
-	printf("#");
-	}
+      
     }
     printf("\n");
   }
