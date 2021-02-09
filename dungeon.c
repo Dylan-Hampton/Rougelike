@@ -86,7 +86,7 @@ void create_paths(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
 	}
 
         //sets rock to corridor
-	if (dungeon[y][x] == 0)
+        if (dungeon[y][x] == 0 && dungeon[y][x+1] != 2 && dungeon[y][x-1] != 2)
 	{
 	  dungeon[y][x] = 2;
 	}
@@ -106,7 +106,7 @@ void create_paths(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
       }
 
       //sets rock to corridor
-      if (dungeon[y][x] == 0)
+      if (dungeon[y][x] == 0 && dungeon[y+1][x] != 2 && dungeon[y-1][x] != 2)
       {
 	dungeon[y][x] = 2;
       }
