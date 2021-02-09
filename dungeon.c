@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 //Constants
 #define DUNGEON_ROW 21
 #define DUNGEON_COL 80
+#define numRooms    6
 
 void print_dungeon(); //Prints out the dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
@@ -20,31 +22,33 @@ int dungeon[DUNGEON_ROW][DUNGEON_COL];//Used ints to make defining hardness easi
 int main(int argc, char *argv[]) {
 
   srand(time(NULL));
+  int room_x_coord[6];
+  int room_y_coord[6];
   
 
   set_dungeon();
-  create_rooms();
+  create_rooms(&room_x_coord, &room_y_coord);
   create_stairs();
-  create_paths();
+  create_paths(&room_x_coord, &room_y_coord);
   print_dungeon();
 
   return 0;
 }
 
 void create_stairs() {
-	int upperstair = 1;
-	for (int y = 0; y < DUNGEON_ROW; y++)    
+ int upperstair = 1;
+ for (int y = 0; y < DUNGEON_ROW; y++)    
         {
                 for (int x = 0; x < DUNGEON_COL; x++) 
                 {
-                	if (dungeon[y][x] == 1 && upperstair)
-			{
-				dungeon[y + 1][x + 1] = 3;
-				upperstair = 0;
-			}
+                 if (dungeon[y][x] == 1 && upperstair)
+   {
+    dungeon[y + 1][x + 1] = 3;
+    upperstair = 0;
+   }
                 }
         }
-	int lowerstair = 1;
+ int lowerstair = 1;
         for (int y =  DUNGEON_ROW; y >= 0; y--)
         {
                 for (int x = DUNGEON_COL; x >= 0; x--)
@@ -60,22 +64,44 @@ void create_stairs() {
 }
 
 // creates the paths between rooms
-void create_paths(){
-	for (int y = 0; y < DUNGEON_ROW; y++) 
-	{
-		for (int x = 0; x < DUNGEON_COL; x++)
-		{
-			
+void create_paths(int room_x_coord[numRooms], int room_y_coord[numRooms]){
+  //find closest room based on center euclidean distance ie sqrt((x2-x1)^2+(y2-y1)^2)
+  for(int i = 1; i < numRooms; i++) {
+	int y = room_y_coord[0], x = room_x_coord[0];
+	  while(y != room_y_coord[i]) {
+		if (room_y_coord[i] > y) {
+			y++;
 		}
-	}
+		else {
+			y--;
+		}
+		if (dungeon[y][x] == 0) {
+			dungeon[y][x] = 2;
+		}
+
+	  }
+	  while(x != room_x_coord[i]) {
+                if (room_x_coord[i] > x) {
+                        x++;
+                }
+                else {
+                        x--;
+                }
+                if (dungeon[y][x] == 0) {
+                        dungeon[y][x] = 2;
+                }
+
+          }
+
+  }
 }
 
-void create_rooms(){
+void create_rooms(int room_x_coord[6], int room_y_coord[6]){
   // int totalRooms = (rand() % 3) + 6;
-  int roomcount = 0;
+  int roomCount = 0;
   int attempts = 0;
 
- while(roomcount != 6 && attempts < 2000)
+ while(roomCount != numRooms && attempts < 2000)
  {
    int x_coord = rand() % DUNGEON_COL; //0-79
    int y_coord = rand() % DUNGEON_ROW; //0-20
@@ -93,30 +119,30 @@ void create_rooms(){
        //Used to check if out of bounds
        if((y > DUNGEON_ROW - 1 || y < 0) || (x > DUNGEON_COL - 1 || x < 0) || y+y_dim > DUNGEON_ROW - 1 || x+x_dim > DUNGEON_COL - 1)
        {
-	 placement_successful = 0;
+  placement_successful = 0;
        }
 
        //Checks each corner for overlap
        else if(dungeon[y][x] != 0 || dungeon[y + y_dim][x] != 0 ||
-	  dungeon[y][x+x_dim] != 0 || dungeon[y+y_dim][x+x_dim] != 0)
+   dungeon[y][x+x_dim] != 0 || dungeon[y+y_dim][x+x_dim] != 0)
        {
-	 placement_successful = 0;
+  placement_successful = 0;
        }
 
        //Checks if two rooms are touching by checking the perimeter of room
        else
        {
-	 for(int j = x_coord; j <= x_coord + x_dim; j++)
-	   {
-	     for(int i = y_coord; i <= y_coord + y_dim; i++)
-	     {
-	       if(dungeon[i][x_coord-1] != 0 || dungeon[y_coord-1][j] != 0 ||
-		  dungeon[(y_coord+y_dim)+1][j] != 0 || dungeon[i][(x_coord + x_dim)+1] != 0)
-		 {
-		   placement_successful = 0;
-		 }
-	     }
-	   }
+  for(int j = x_coord; j <= x_coord + x_dim; j++)
+    {
+      for(int i = y_coord; i <= y_coord + y_dim; i++)
+      {
+        if(dungeon[i][x_coord-1] != 0 || dungeon[y_coord-1][j] != 0 ||
+    dungeon[(y_coord+y_dim)+1][j] != 0 || dungeon[i][(x_coord + x_dim)+1] != 0)
+   {
+     placement_successful = 0;
+   }
+      }
+    }
        }
      }
    }
@@ -128,12 +154,14 @@ void create_rooms(){
      {
        for(int c = x_coord; c < x_coord + x_dim; c++)
        {
-	 dungeon[r][c] = 1;
+  dungeon[r][c] = 1;
        }
-   }
-     
-       roomcount++;
-       attempts = 0;
+     }
+
+     room_y_coord[roomCount] = y_coord + (y_dim / 2);
+     room_x_coord[roomCount] = x_coord + (x_dim / 2);
+     roomCount++;
+     attempts = 0;
    }
 
    //Ends if too many failed attempts in a row
@@ -171,29 +199,29 @@ void print_dungeon(){
       switch(dungeon[r][c])
       {
         case 0:
-	  printf(" ");
-	  break;
+   printf(" ");
+   break;
 
         case 1:
-	  printf(".");
-	  break;
+   printf(".");
+   break;
 
         case 2:
-	  printf("#");
-	  break;
+   printf("#");
+   break;
 
         case 3:
-	  printf(">");
-	  break;
+   printf(">");
+   break;
 
         case 4:
-	  printf("<");
-	  break;
+   printf("<");
+   break;
 
-	//E for error
+ //E for error
         default:
-	  printf("E");
-	  break;
+   printf("E");
+   break;
       }
       
     }
@@ -201,3 +229,4 @@ void print_dungeon(){
   }
  
 }
+

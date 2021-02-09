@@ -1,3 +1,5 @@
+2/8/2021 BN/DH: Added simple path generation
+2/5/2021 BN: Added stair generation and fixed some bugs
 2/5/2021 DH: Added a check to avoid two rooms touching
 2/4/2021 DH: Created Makefile and changed formatting.
 2/4/2021 CB: Set up code, made create_rooms method, set_dungeon method, and
