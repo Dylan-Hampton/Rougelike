@@ -21,6 +21,7 @@ int dungeon[DUNGEON_ROW][DUNGEON_COL];//Used ints to make defining hardness easi
 int main(int argc, char *argv[]) {
 
   srand(time(NULL));
+  //These arrays store the x,y of the center point of each room
   int room_x_coord[NUM_ROOMS];
   int room_y_coord[NUM_ROOMS];
   
@@ -78,8 +79,7 @@ void create_paths(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
       if (room_y_coord[i] > y)
 	{
 	  y++;
-	}
-      
+	}  
 	else
 	{
 	  y--;
@@ -99,7 +99,6 @@ void create_paths(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
       {
 	x++;
       }
-      
       else
       {
 	x--;
@@ -110,9 +109,7 @@ void create_paths(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
       {
 	dungeon[y][x] = 2;
       }
-
     }
-
   }
 }
 
@@ -247,6 +244,5 @@ void print_dungeon(){
     }
     printf("\n");
   }
- 
 }
 
