@@ -14,6 +14,7 @@ void set_dungeon(); //Initializes all cells to rock(space)
 void create_rooms(); //Creates 6 random rooms of random but minimum size
 void create_paths(); //Creates paths between each room
 void create_stairs(); //Creates one stair that goes up and one that goes down
+void create_player(); //Creates the player and places them in the highest room corner
 int save_dungeon(); //Saves dungeon in binary file in the .../.rlg327/dungeon  folder
 int load_dungeon(); //Reads dungeon from binary file in the .../.rlg327/dungeon  folder
 
@@ -29,72 +30,90 @@ int main(int argc, char *argv[]) {
   int room_x_coord[NUM_ROOMS];
   int room_y_coord[NUM_ROOMS];
   int load, save = 0;
+  int readErr,writeErr = 0;
 
   //check for save or load switches
   if(argc > 1)
   {
     for(int i = 1; i < argc; i++) //should i just make this 2 if statements with 2 args?
     {
-      int readErr,writeErr = 0;
       if(!strcmp(argv[i], "--save"))  //strcmp returns 0 (which in an if statement means false) if matching
       {
-	save = 1;
-	writeErr = save_dungeon();
-      }
+				save = 1;
+		   }
 
       if(!strcmp(argv[i], "--load"))
       {
-	load = 1;
-	readErr = load_dungeon();
-      }
-
-      if(writeErr == -1 || readErr == -1) //error handling
-      {
-	return -1;
+				load = 1;
       }
     }
   }
   
-  if(load == 0)
-  {
-    set_dungeon();
-    create_rooms(&room_x_coord, &room_y_coord);
-    create_stairs();
-    create_paths(&room_x_coord, &room_y_coord);
-    print_dungeon();
-  }
-
+	set_dungeon();
+	if (load == 0) {
+		// load from file
+		readErr = load_dungeon();
+	} else {
+		create_rooms(&room_x_coord, &room_y_coord);
+		create_stairs();
+		create_player();
+		create_paths(&room_x_coord, &room_y_coord);
+	}
+	if (save == 0) {
+		// save dungeon to file
+		writeErr = save_dungeon();
+	}
+	if(writeErr == -1 || readErr == -1) //error handling
+	{
+		return -1;
+	}
+	print_dungeon();
   return 0;
 }
 
+void create_player() {
+	int player = 1;
+	// creates the player in the highest room corner
+	for (int y = 0; y < DUNGEON_ROW; y++)    
+	{
+		for (int x = 0; x < DUNGEON_COL; x++) 
+		{
+			if (dungeon[y][x] == 1 && player)
+			{
+				dungeon[y][x] = 5;
+				player = 0;
+			}
+		}
+	}	
+}
+
 void create_stairs() {
- int upperstair = 1;
- //adds upper staircase highest room corner
- for (int y = 0; y < DUNGEON_ROW; y++)    
-     {
-       for (int x = 0; x < DUNGEON_COL; x++) 
-       {
-	 if (dungeon[y][x] == 1 && upperstair)
-	 {
-	   dungeon[y + 1][x + 1] = 3;
-	   upperstair = 0;
-	 }
-       }
-     }
- 
- //adds lower staircase to lowest room corner
- int lowerstair = 1;
- for (int y =  DUNGEON_ROW; y >= 0; y--)
- {
-   for (int x = DUNGEON_COL; x >= 0; x--)
-   {
-     if (dungeon[y][x] == 1 && lowerstair)
-     {
-       dungeon[y - 1][x - 1] = 4;
-       lowerstair = 0;
-     }
-   }
- }
+ 	int upperstair = 1;
+	//adds upper staircase highest room corner
+	for (int y = 0; y < DUNGEON_ROW; y++)    
+	{
+		for (int x = 0; x < DUNGEON_COL; x++) 
+		{
+			if (dungeon[y][x] == 1 && upperstair)
+			{
+				dungeon[y + 1][x + 1] = 3;
+				upperstair = 0;
+			}
+		}
+	}
+	int lowerstair = 1;
+	//adds lower staircase to lowest room corner
+	for (int y =  DUNGEON_ROW; y >= 0; y--)
+	{
+		for (int x = DUNGEON_COL; x >= 0; x--)
+		{
+			if (dungeon[y][x] == 1 && lowerstair)
+			{
+				dungeon[y - 1][x - 1] = 4;
+				lowerstair = 0;
+			}
+		}
+	}
 }
 
 // creates the paths between rooms
@@ -238,6 +257,7 @@ void set_dungeon(){
 //A 2 == corridor('#')
 //A 3 == upstairs('>')
 //A 4 == downstairs('<')
+//A 5 == player character('@')
 void print_dungeon(){
 
   for(int r = 0; r < DUNGEON_ROW; r++)
@@ -266,6 +286,9 @@ void print_dungeon(){
         case 4:
 	  printf("<");
 	  break;
+				case 5:
+		printf("@");
+		break;
 
 	  //E for error
         default:
