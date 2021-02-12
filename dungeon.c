@@ -1,17 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 //Constants
 #define DUNGEON_ROW 21
 #define DUNGEON_COL 80
 #define NUM_ROOMS    6
 
+//Prototypes
 void print_dungeon(); //Prints out the dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
 void create_rooms(); //Creates 6 random rooms of random but minimum size
 void create_paths(); //Creates paths between each room
 void create_stairs(); //Creates one stair that goes up and one that goes down
+int save_dungeon(); //Saves dungeon in binary file in the .../.rlg327/dungeon  folder
+int load_dungeon(); //Reads dungeon from binary file in the .../.rlg327/dungeon  folder
 
 //Globals -I'm pretty sure we are allowed to use?
 
@@ -24,6 +28,29 @@ int main(int argc, char *argv[]) {
   //These arrays store the x,y of the center point of each room
   int room_x_coord[NUM_ROOMS];
   int room_y_coord[NUM_ROOMS];
+
+  //check for save or load switches
+  if(argc > 1)
+  {
+    for(int i = 1; i < argc; i++) //should i just make this 2 if statements with 2 args?
+    {
+      int readErr,writeErr = 0;
+      if(!strcmp(argv[i], "--save"))  //strcmp returns 0 (which in an if statement means false) if matching
+      {
+	writeErr = save_dungeon();
+      }
+
+      if(!strcmp(argv[i], "--load"))
+      {
+	readErr = load_dungeon();
+      }
+
+      if(writeErr == -1 || readErr == -1) //error handling
+      {
+	return -1;
+      }
+    }
+  }
   
 
   set_dungeon();
@@ -244,5 +271,34 @@ void print_dungeon(){
     }
     printf("\n");
   }
+}
+
+int save_dungeon()
+{
+  FILE *f;
+  if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon"),"w")))
+  {
+    fprintf(stderr, "Failed to open file for writing");
+    return -1;
+  }
+  //wtf does that table mean
+
+  fclose(f);
+  return 0;
+}
+
+int load_dungeon()
+{
+  FILE *f;
+  if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon"),"r")))
+  {
+    fprintf(stderr, "Failed to open file for reading");
+    return -1;
+  }
+  
+  //wtf does that table mean
+  
+  fclose(f);
+  return 0;
 }
 
