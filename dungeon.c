@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
   //These arrays store the x,y of the center point of each room
   int room_x_coord[NUM_ROOMS];
   int room_y_coord[NUM_ROOMS];
+  int load, save = 0;
 
   //check for save or load switches
   if(argc > 1)
@@ -37,11 +38,13 @@ int main(int argc, char *argv[]) {
       int readErr,writeErr = 0;
       if(!strcmp(argv[i], "--save"))  //strcmp returns 0 (which in an if statement means false) if matching
       {
+	save = 1;
 	writeErr = save_dungeon();
       }
 
       if(!strcmp(argv[i], "--load"))
       {
+	load = 1;
 	readErr = load_dungeon();
       }
 
@@ -52,12 +55,14 @@ int main(int argc, char *argv[]) {
     }
   }
   
-
-  set_dungeon();
-  create_rooms(&room_x_coord, &room_y_coord);
-  create_stairs();
-  create_paths(&room_x_coord, &room_y_coord);
-  print_dungeon();
+  if(load == 0)
+  {
+    set_dungeon();
+    create_rooms(&room_x_coord, &room_y_coord);
+    create_stairs();
+    create_paths(&room_x_coord, &room_y_coord);
+    print_dungeon();
+  }
 
   return 0;
 }
