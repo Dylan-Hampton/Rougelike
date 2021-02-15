@@ -315,9 +315,9 @@ void print_dungeon(){
 int save_dungeon()
 {
   FILE *f;
-  char[] fileMarker = "RLG327-S2021";
+  char fileMarker[] = "RLG327-S2021";
   uint32_t fileVersion = 0;
-  uint8_t playerX, playerY;
+  uint8_t *playerX = NULL, *playerY = NULL;
   
   if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon"),"w")))
   {
@@ -326,7 +326,7 @@ int save_dungeon()
   }
 
   fwrite(fileMarker, sizeof(char), 12, f); //file-type marker
-  fwrite(fileVersion, sizeof(uint32_t), 1, f); //32 bit uint for file version
+  fwrite(&fileVersion, sizeof(uint32_t), 1, f); //32 bit uint for file version
 
   for(int r = 0; r < DUNGEON_ROW; r++) //find and write player char x,y position
   {
@@ -334,8 +334,8 @@ int save_dungeon()
     {
       if(dungeon_display[r][c] == 5)
       {
-	playerY = r;
-	playerX = c;
+	*playerY = r;
+	*playerX = c;
 	fwrite(playerX, sizeof(uint8_t), 1, f);
 	fwrite(playerY, sizeof(uint8_t), 1, f);
       }
@@ -344,7 +344,7 @@ int save_dungeon()
   
   //wtf does that table mean
 
-  fclose();
+  fclose(f);
   return 0;
 }
 
