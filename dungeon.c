@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <stdint.h>
 
 //Constants
 #define DUNGEON_ROW 21
@@ -314,14 +315,36 @@ void print_dungeon(){
 int save_dungeon()
 {
   FILE *f;
+  char[] fileMarker = "RLG327-S2021";
+  uint32_t fileVersion = 0;
+  uint8_t playerX, playerY;
+  
   if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon"),"w")))
   {
     fprintf(stderr, "Failed to open file for writing");
     return -1;
   }
+
+  fwrite(fileMarker, sizeof(char), 12, f); //file-type marker
+  fwrite(fileVersion, sizeof(uint32_t), 1, f); //32 bit uint for file version
+
+  for(int r = 0; r < DUNGEON_ROW; r++) //find and write player char x,y position
+  {
+    for(int c = 0; c < DUNGEON_COL; c++)
+    {
+      if(dungeon_display[r][c] == 5)
+      {
+	playerY = r;
+	playerX = c;
+	fwrite(playerX, sizeof(uint8_t), 1, f);
+	fwrite(playerY, sizeof(uint8_t), 1, f);
+      }
+    }
+  }
+  
   //wtf does that table mean
 
-  fclose(f);
+  fclose();
   return 0;
 }
 
