@@ -364,11 +364,28 @@ int save_dungeon(int *num_rooms)
 int load_dungeon(int *num_rooms)
 {
   FILE *f;
+  char fileMarker[12];
+  uint32_t fileVersion, fileSize;
+  uint16_t uNumRooms;
   if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon/RLG327-S2021"),"r")))
   {
     fprintf(stderr, "Failed to open file for reading\n");
     return -1;
   }
+
+  fread(fileMarker, sizeof(char), 12, f); //file-type marker
+  fread(&fileVersion, sizeof(uint32_t), 1, f); //file version
+  fread(&fileSize, sizeof(uint32_t), 1, f); //size of file in bytes (num bytes)
+  fread(&pc.x_pos, sizeof(uint8_t), 1, f); //read player y pos
+  fread(&pc.y_pos, sizeof(uint8_t), 1, f); //read player x pos
+  fread(dungeon_hardness, sizeof(int), DUNGEON_ROW * DUNGEON_COL, f); //read dungeon hardness array
+  fread(&uNumRooms, sizeof(uint16_t), 1, f); //read number of rooms
+
+  printf("%s \n", fileMarker);
+  printf("%d \n", fileVersion);
+  printf("%d \n", fileSize);
+  printf("%d \n", pc.y_pos);
+  printf("%d \n", pc.x_pos);
   
   //wtf does that table mean
   
