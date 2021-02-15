@@ -28,10 +28,16 @@ typedef struct room {
   int y_width;
 } room_t;
 
+typedef struct pc {
+  int x_pos;
+  int y_pos;
+} pc_t;
+
 //Globals -I'm pretty sure we are allowed to use?
 int dungeon_display[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for outputting text 
 int dungeon_hardness[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for hardness level  hardness goes from 0 - 255 (0 meaning room or corridor, 255 meaning immutable)
 room_t rooms[MAX_ROOMS];
+pc_t pc;
 
 
 int main(int argc, char *argv[]) {
@@ -95,6 +101,8 @@ void create_player() {
 	dungeon_display[y][x] = 5;
 	dungeon_hardness[y][x] = 0;
 	player = 0;
+	pc.x_pos = x;
+	pc.y_pos = y;
       }
     }
   }	
@@ -329,33 +337,20 @@ int save_dungeon(int *num_rooms)
 {
   FILE *f;
   char fileMarker[] = "RLG327-S2021";
-  uint32_t fileVersion = 0;
+  uint32_t fileVersion = 0, fileSize = 1708; //+ (num downstair cases * 2) + (num upstair cases * 2);
   uint16_t uNumRooms = *num_rooms;
-  uint8_t *playerX = NULL, *playerY = NULL;
   
-  if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon"),"w")))
+  if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon/RLG327-S2021"),"w")))
   {
-    fprintf(stderr, "Failed to open file for writing");
+    fprintf(stderr, "Failed to open file for writing\n");
     return -1;
   }
 
   fwrite(fileMarker, sizeof(char), 12, f); //file-type marker
   fwrite(&fileVersion, sizeof(uint32_t), 1, f); //32 bit uint for file version
-
-  for(int r = 0; r < DUNGEON_ROW; r++) //find and write player char x,y position
-  {
-    for(int c = 0; c < DUNGEON_COL; c++)
-    {
-      if(dungeon_display[r][c] == 5)
-      {
-	*playerY = r;
-	*playerX = c;
-	fwrite(playerX, sizeof(uint8_t), 1, f);
-	fwrite(playerY, sizeof(uint8_t), 1, f);
-      }
-    }
-  }
-
+  fwrite(&fileSize, sizeof(uint32_t), 1, f); //size of file in bytes (num bytes)
+  fwrite(&pc.x_pos, sizeof(uint8_t), 1, f); //write player y pos
+  fwrite(&pc.y_pos, sizeof(uint8_t), 1, f); //write player x pos
   fwrite(dungeon_hardness, sizeof(int), DUNGEON_ROW * DUNGEON_COL, f); //writes dungeon hardness array
   fwrite(&uNumRooms, sizeof(uint16_t), 1, f); //writes number of rooms
   
@@ -369,9 +364,9 @@ int save_dungeon(int *num_rooms)
 int load_dungeon(int *num_rooms)
 {
   FILE *f;
-  if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon"),"r")))
+  if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon/RLG327-S2021"),"r")))
   {
-    fprintf(stderr, "Failed to open file for reading");
+    fprintf(stderr, "Failed to open file for reading\n");
     return -1;
   }
   
