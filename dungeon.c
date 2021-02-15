@@ -7,7 +7,8 @@
 //Constants
 #define DUNGEON_ROW 21
 #define DUNGEON_COL 80
-#define NUM_ROOMS    6
+#define MIN_ROOMS    6
+#define MAX_ROOMS   10
 
 //Prototypes
 void print_dungeon(); //Prints out the dungeon
@@ -19,19 +20,26 @@ void create_player(); //Creates the player and places them in the highest room c
 int save_dungeon(); //Saves dungeon in binary file in the .../.rlg327/dungeon  folder
 int load_dungeon(); //Reads dungeon from binary file in the .../.rlg327/dungeon  folder
 
+//Struct defs
+typedef struct room {
+  int x_pos;
+  int y_pos;
+  int x_width;
+  int y_width;
+} room_t;
+
 //Globals -I'm pretty sure we are allowed to use?
 int dungeon_display[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for outputting text 
 int dungeon_hardness[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for hardness level  hardness goes from 0 - 255 (0 meaning room or corridor, 255 meaning immutable)
+room_t rooms[MAX_ROOMS];
 
 
 int main(int argc, char *argv[]) {
 
   srand(time(NULL));
-  //These arrays store the x,y of the center point of each room
-  int room_x_coord[NUM_ROOMS];
-  int room_y_coord[NUM_ROOMS];
   int load, save = 0;
   int readErr,writeErr = 0;
+  int *num_rooms;
 
   //check for save or load switches
   if(argc > 1)
@@ -53,18 +61,18 @@ int main(int argc, char *argv[]) {
   set_dungeon();
   if (load == 1)
   {
-    readErr = load_dungeon(); // load from file
+    readErr = load_dungeon(&num_rooms); // load from file
   }
   else
   {
-    create_rooms(&room_x_coord, &room_y_coord);
+    create_rooms(&num_rooms);
     create_stairs();
     create_player();
-    create_paths(&room_x_coord, &room_y_coord);
+    create_paths(&num_rooms);
   }
   if (save == 1)
   {
-    writeErr = save_dungeon(); // save dungeon to file
+    writeErr = save_dungeon(&num_rooms); // save dungeon to file
   }
   if(writeErr == -1 || readErr == -1) //error handling
   {
@@ -124,17 +132,19 @@ void create_stairs() {
 }
 
 // creates the paths between rooms
-void create_paths(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
+void create_paths(int *num_rooms){
 
   //connects all rooms to intial room
-  for(int i = 1; i < NUM_ROOMS; i++)
+  for(int i = 1; i < *num_rooms; i++)
   {
-    int y = room_y_coord[0], x = room_x_coord[0];
+    int room_center_x = rooms[i].x_pos + (rooms[i].x_width / 2);
+    int room_center_y = rooms[i].y_pos + (rooms[i].y_width / 2);
+    int x = rooms[0].x_pos + (rooms[0].x_width / 2), y = rooms[0].y_pos + (rooms[0].y_width / 2);;
 
     //goes up / down to room[i] y coordinate 
-    while(y != room_y_coord[i])
+    while(y != room_center_y)
     {
-      if (room_y_coord[i] > y)
+      if (room_center_y > y)
 	{
 	  y++;
 	}  
@@ -152,9 +162,9 @@ void create_paths(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
     }
     
     //goes left / right to room[i] x coordinate
-    while(x != room_x_coord[i])
+    while(x != room_center_x)
     {
-      if (room_x_coord[i] > x)
+      if (room_center_x > x)
       {
 	x++;
       }
@@ -173,12 +183,13 @@ void create_paths(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
   }
 }
 
-void create_rooms(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
+void create_rooms(int *num_rooms){
   // int totalRooms = (rand() % 3) + 6;
   int roomCount = 0;
   int attempts = 0;
+  *num_rooms = MIN_ROOMS;
 
- while(roomCount != NUM_ROOMS && attempts < 2000)
+ while(roomCount != MIN_ROOMS && attempts < 2000)
  {
    int x_coord = rand() % DUNGEON_COL; //0-79
    int y_coord = rand() % DUNGEON_ROW; //0-20
@@ -236,8 +247,10 @@ void create_rooms(int room_x_coord[NUM_ROOMS], int room_y_coord[NUM_ROOMS]){
        }
      }
 
-     room_y_coord[roomCount] = y_coord + (y_dim / 2);
-     room_x_coord[roomCount] = x_coord + (x_dim / 2);
+     rooms[roomCount].x_width = x_dim;
+     rooms[roomCount].y_width = y_dim;
+     rooms[roomCount].x_pos = x_coord;
+     rooms[roomCount].y_pos = y_coord;
      roomCount++;
      attempts = 0;
    }
@@ -312,11 +325,12 @@ void print_dungeon(){
   }
 }
 
-int save_dungeon()
+int save_dungeon(int *num_rooms)
 {
   FILE *f;
   char fileMarker[] = "RLG327-S2021";
   uint32_t fileVersion = 0;
+  uint16_t uNumRooms = *num_rooms;
   uint8_t *playerX = NULL, *playerY = NULL;
   
   if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon"),"w")))
@@ -341,6 +355,10 @@ int save_dungeon()
       }
     }
   }
+
+  fwrite(dungeon_hardness, sizeof(int), DUNGEON_ROW * DUNGEON_COL, f); //writes dungeon hardness array
+  fwrite(&uNumRooms, sizeof(uint16_t), 1, f); //writes number of rooms
+  
   
   //wtf does that table mean
 
@@ -348,7 +366,7 @@ int save_dungeon()
   return 0;
 }
 
-int load_dungeon()
+int load_dungeon(int *num_rooms)
 {
   FILE *f;
   if(!(f = fopen(strcat(getenv("HOME"),"/.rlg327/dungeon"),"r")))

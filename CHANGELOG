@@ -1,3 +1,4 @@
+2/14/2021 DH: Restructured room code in favor of using a struct and added dungeon_hardness and num_rooms writes in save_dungeon
 2/13/2021 DH: Added parallel 2d array for storing hardness factor
 2/12/2021 BN: Added create_player and cleaned up save and load tag setting
 2/11/2021 DH: Added save / load tag checks and set up save_dungeon and load_dungeon skeletons
