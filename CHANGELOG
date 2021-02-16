@@ -1,3 +1,5 @@
+2/16/2021 DH: Completed save dungeon, working on tracing segfaults in read dungeon
+2/15/2021 DH/BN/CB: Worked on getting save dungeon complete, still need to trace some seg faults
 2/15/2021 DH: Added PC struct and fixed some bugs with save_dungeon, added up to num_rooms in load_dungeon
 2/14/2021 DH: Restructured room code in favor of using a struct and added dungeon_hardness and num_rooms writes in save_dungeon
 2/13/2021 DH: Added parallel 2d array for storing hardness factor
