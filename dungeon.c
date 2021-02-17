@@ -368,7 +368,7 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
 {	
   FILE *f;
   char fileMarker[] = "RLG327-S2021";
-  uint16_t uNumRooms = htobe32(*num_rooms);
+printf("lolo %d", *num_rooms);
   uint32_t fileVersion = htobe32(0), fileSize = htobe32(1708 + ((*num_downstair) * 2) + ((*num_upstair) * 2) + ((*num_rooms) * 4));
   
   char *home = getenv("HOME");
@@ -389,7 +389,7 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   fwrite(&pc.x_pos, sizeof(uint8_t), 1, f); //write player y pos
   fwrite(&pc.y_pos, sizeof(uint8_t), 1, f); //write player x pos
   fwrite(dungeon_hardness, sizeof(dungeon_hardness), 1, f); //writes dungeon hardness array
-  fwrite(&uNumRooms, sizeof(uint16_t), 1, f); //writes number of rooms
+  fwrite(num_rooms, sizeof(num_rooms), 1, f); //writes number of rooms
   fwrite(rooms, sizeof(rooms), 1, f);
 /*  
 for (int i = 0; i < uNumRooms; i++) //writes all rooms x,y coord and dimensions
@@ -449,7 +449,7 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   FILE *f;
   char fileMarker[12];
   uint32_t fileVersion, fileSize;
-  uint16_t uNumRooms, num_up, num_down;
+  uint16_t num_up, num_down;
 
   char *home = getenv("HOME");
   char *game_dir = ".rlg327";
@@ -469,8 +469,7 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   fread(&pc.x_pos, sizeof(uint8_t), 1, f); //gets player y pos
   fread(&pc.y_pos, sizeof(uint8_t), 1, f); //gets player x pos
   fread(dungeon_hardness, sizeof(dungeon_hardness), 1, f); //gets dungeon hardness array
-  fread(&uNumRooms, sizeof(uint16_t), 1, f); //gets number of rooms
-  *num_rooms = uNumRooms;
+  fread(num_rooms, sizeof(num_rooms), 1, f); //gets number of rooms
 	fread(rooms, sizeof(rooms), 1, f);
 /*
   for (int i = 0; i < uNumRooms; i++) //gets rooms x,y pos and dims
@@ -531,8 +530,7 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     }
   }
 
-printf("jojo %d", uNumRooms);
-  for(int i = 0; i < uNumRooms; i++) //Place rooms
+  for(int i = 0; i < *num_rooms; i++) //Place rooms
   {
     int x = rooms[i].x_pos;
     int y = rooms[i].y_pos;
