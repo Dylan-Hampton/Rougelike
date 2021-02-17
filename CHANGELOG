@@ -1,3 +1,4 @@
+2/17/2021 DH/BN/CB: Worked on correcting load_dungeon and adding endianess
 2/16/2021 DH: Completed save dungeon, working on tracing segfaults in read dungeon
 2/15/2021 DH/BN/CB: Worked on getting save dungeon complete, still need to trace some seg faults
 2/15/2021 DH: Added PC struct and fixed some bugs with save_dungeon, added up to num_rooms in load_dungeon

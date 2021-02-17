@@ -3,6 +3,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdint.h>
+#include <endian.h>
 
 //Constants
 #define DUNGEON_ROW 21
@@ -51,8 +52,7 @@ int main(int argc, char *argv[]) {
 
   srand(time(NULL));
   int load = 0, save = 0;
-  int readErr = 0, writeErr = 0;
-  int *num_rooms = malloc(sizeof(int)), *num_upstair = malloc(sizeof(int)), *num_downstair = malloc(sizeof(int));
+  int readErr = 0, writeErr = 0, num_rooms, num_upstair, num_downstair;
   //check for save or load switches
   if(argc > 1)
   {
@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
   {
     upstairs = malloc(sizeof(stair_t)); //If we know we are creating our own dungeon we can malloc the stairs with size 1
     downstairs = malloc(sizeof(stair_t));
-    *num_upstair = 1;
-    *num_downstair = 1;
+    num_upstair = 1;
+    num_downstair = 1;
    
     create_rooms(&num_rooms);
     create_stairs();
@@ -133,8 +133,8 @@ void create_stairs() {
 	  dungeon_display[y + 1][x + 1] = 3;
 	  dungeon_hardness[y + 1][x + 1] = 0;
 	  upperstair = 0;
-	  upstairs[0].x_pos = x;
-	  upstairs[0].y_pos = y;
+	  upstairs[0].x_pos = x + 1;
+	  upstairs[0].y_pos = y + 1;
 	  upstairs[0].direction = 1;
 	}
       }
@@ -150,8 +150,8 @@ void create_stairs() {
 	dungeon_display[y - 1][x - 1] = 4;
 	dungeon_hardness[y - 1][x - 1] = 0;
 	lowerstair = 0;
-	downstairs[0].x_pos = x;
-	downstairs[0].y_pos = y;
+	downstairs[0].x_pos = x - 1;
+	downstairs[0].y_pos = y - 1;
 	downstairs[0].direction = 0;
       }
     }
@@ -166,7 +166,8 @@ void create_paths(int *num_rooms){
   {
     int room_center_x = rooms[i].x_pos + (rooms[i].x_width / 2);
     int room_center_y = rooms[i].y_pos + (rooms[i].y_height / 2);
-    int x = rooms[0].x_pos + (rooms[0].x_width / 2), y = rooms[0].y_pos + (rooms[0].y_height / 2);;
+    int x = rooms[0].x_pos + (rooms[0].x_width / 2);
+    int y = rooms[0].y_pos + (rooms[0].y_height / 2);
 
     //goes up / down to room[i] y coordinate 
     while(y != room_center_y)
@@ -356,8 +357,8 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
 {	
   FILE *f;
   char fileMarker[] = "RLG327-S2021";
-  uint16_t uNumRooms = *num_rooms;
-  uint32_t fileVersion = 0, fileSize = 1708 + ((*num_downstair) * 2) + ((*num_upstair) * 2) + ((*num_rooms) * 4);
+  uint16_t uNumRooms = htobe32(*num_rooms);
+  uint32_t fileVersion = htobe32(0), fileSize = htobe32(1708 + ((*num_downstair) * 2) + ((*num_upstair) * 2) + ((*num_rooms) * 4));
   
   char *home = getenv("HOME");
   char *game_dir = ".rlg327";
@@ -374,9 +375,9 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   fwrite(fileMarker, sizeof(char), 12, f); //file-type marker
   fwrite(&fileVersion, sizeof(uint32_t), 1, f); //32 bit uint for file version
   fwrite(&fileSize, sizeof(uint32_t), 1, f); //size of file in bytes (num bytes)
-  fwrite(&pc.x_pos, 1, 1, f); //write player y pos
-  fwrite(&pc.y_pos, 1, 1, f); //write player x pos
-  fwrite(dungeon_hardness, 1, DUNGEON_ROW * DUNGEON_COL, f); //writes dungeon hardness array
+  fwrite(&pc.x_pos, sizeof(uint8_t), 1, f); //write player y pos
+  fwrite(&pc.y_pos, sizeof(uint8_t), 1, f); //write player x pos
+  fwrite(dungeon_hardness, sizeof(uint8_t), DUNGEON_ROW * DUNGEON_COL, f); //writes dungeon hardness array
   fwrite(&uNumRooms, sizeof(uint16_t), 1, f); //writes number of rooms
   
   for (int i = 0; i < uNumRooms; i++) //writes all rooms x,y coord and dimensions
@@ -385,10 +386,10 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     uint8_t y_pos = rooms[i].y_pos;
     uint8_t x_width = rooms[i].x_width;
     uint8_t y_height = rooms[i].y_height;
-    fwrite(&x_pos, 1, 1, f);
-    fwrite(&y_pos, 1, 1, f);
-    fwrite(&x_width, 1, 1, f);
-    fwrite(&y_height, 1, 1, f);
+    fwrite(&x_pos, sizeof(uint8_t), 1, f);
+    fwrite(&y_pos, sizeof(uint8_t), 1, f);
+    fwrite(&x_width, sizeof(uint8_t), 1, f);
+    fwrite(&y_height, sizeof(uint8_t), 1, f);
   }
   
   fwrite(num_upstair, sizeof(uint16_t), 1, f);	//writes number of upstairs along with x,y pos
@@ -396,8 +397,8 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   {
     uint8_t x_pos = upstairs[i].x_pos;
     uint8_t y_pos = upstairs[i].y_pos;
-    fwrite(&x_pos, 1, 1, f);
-    fwrite(&y_pos, 1, 1, f);
+    fwrite(&x_pos, sizeof(uint8_t), 1, f);
+    fwrite(&y_pos, sizeof(uint8_t), 1, f);
   }
 
   fwrite(num_downstair, sizeof(uint16_t), 1, f); //writes number of downstairs along with x,y pos
@@ -405,8 +406,8 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   {
     uint8_t x_pos = downstairs[i].x_pos;
     uint8_t y_pos = downstairs[i].y_pos;
-    fwrite(&x_pos, 1, 1, f);
-    fwrite(&y_pos, 1, 1, f);
+    fwrite(&x_pos, sizeof(uint8_t), 1, f);
+    fwrite(&y_pos, sizeof(uint8_t), 1, f);
   }
   
   fclose(f);
@@ -432,22 +433,24 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     return -1;
   }
 
-  fread(fileMarker, sizeof(char), 12, f); //file-type marker
-  fread(&fileVersion, sizeof(uint32_t), 1, f); //file version
-  fread(&fileSize, sizeof(uint32_t), 1, f); //size of file in bytes (num bytes)
-  fread(&pc.x_pos, sizeof(uint8_t), 1, f); //read player y pos
-  fread(&pc.y_pos, sizeof(uint8_t), 1, f); //read player x pos
-  fread(dungeon_hardness, sizeof(int), DUNGEON_ROW * DUNGEON_COL, f); //read dungeon hardness array
-  fread(&uNumRooms, sizeof(uint16_t), 1, f); //read number of rooms
+  fread(fileMarker, sizeof(char), 12, f); //gets file-type marker
+  fread(&fileVersion, sizeof(uint32_t), 1, f); //gets file version
+  fread(&fileSize, sizeof(uint32_t), 1, f); //gets size of file in bytes (num bytes)
+  fread(&pc.x_pos, sizeof(uint8_t), 1, f); //gets player y pos
+  fread(&pc.y_pos, sizeof(uint8_t), 1, f); //gets player x pos
+  fread(dungeon_hardness, sizeof(uint8_t), DUNGEON_ROW * DUNGEON_COL, f); //gets dungeon hardness array
+  fread(&uNumRooms, sizeof(uint16_t), 1, f); //gets number of rooms
+  *num_rooms = uNumRooms;
 
-  for (int i = 0; i < uNumRooms; i++) //reads rooms x,y pos and dims
+  for (int i = 0; i < uNumRooms; i++) //gets rooms x,y pos and dims
   {
     fread(&rooms[i].x_pos, sizeof(uint8_t), 1, f);
     fread(&rooms[i].y_pos, sizeof(uint8_t), 1, f);
     fread(&rooms[i].x_width, sizeof(uint8_t), 1, f);
     fread(&rooms[i].y_height, sizeof(uint8_t), 1, f);
   }
-  fread(&num_up, sizeof(uint16_t), 1, f); //reads number of upstairs
+  
+  fread(&num_up, sizeof(uint16_t), 1, f); //gets number of upstairs
   *num_upstair = num_up;
   upstairs = malloc(num_up * sizeof(stair_t));
   for (int i = 0; i < *num_upstair; i++)  //gets x,y pos for upstairs
@@ -457,7 +460,7 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     upstairs[i].direction = 1;
   }
 
-  fread(&num_down, sizeof(uint16_t), 1, f);  //reads number of downstairs
+  fread(&num_down, sizeof(uint16_t), 1, f);  //gets number of downstairs
   *num_downstair = num_down;
   downstairs = malloc(num_down * sizeof(stair_t));
   for (int i = 0; i < *num_downstair; i++)  //gets x,y pos for downstairs
@@ -466,6 +469,17 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     fread(&downstairs[i].y_pos, sizeof(uint8_t), 1, f);
     downstairs[i].direction = 0;
   }
+  /*
+ for (int r = 0; r < DUNGEON_ROW; r++)
+  {
+    for (int c = 0; c < DUNGEON_COL; c++)
+    {
+      printf("%3d ", dungeon_hardness[r][c]);
+    }
+    printf("\n");
+  }
+  */
+  //setting loaded dungeon to be printed
   
   for(int r = 0; r < DUNGEON_ROW; r++) //Place corridors (any extra will be overwritten)
   {
@@ -495,7 +509,7 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   }
 
   dungeon_display[pc.y_pos][pc.x_pos] = 5; //Place player
-
+ 
   for(int i = 0; i < num_down; i++) //Place downstairs
   {
     dungeon_display[downstairs[i].y_pos][downstairs[i].x_pos] = 4;
@@ -507,6 +521,7 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   }
   
   fclose(f);
+  
   return 0;
 }
 
@@ -521,7 +536,7 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   {
     for (int c = 0; c < DUNGEON_COL; c++)
     {
-      printf("%d ", dungeon_hardness[r][c]);
+      printf("%3d ", dungeon_hardness[r][c]);
     }
     printf("\n");
   }
