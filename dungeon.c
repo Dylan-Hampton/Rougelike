@@ -373,7 +373,8 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
 {	
   FILE *f;
   char fileMarker[] = "RLG327-S2021";
-  uint32_t fileVersion = htobe32(0), fileSize = htobe32(1708 + ((*num_downstair) * 2) + ((*num_upstair) * 2) + ((*num_rooms) * 4));
+  uint32_t fileVersion = htobe32(0);
+  uint32_t fileSize = htobe32(1708 + ((*num_downstair) * 2) + ((*num_upstair) * 2) + ((*num_rooms) * 4));
   
   char *home = getenv("HOME");
   char *game_dir = ".rlg327";
@@ -386,7 +387,7 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     fprintf(stderr, "Failed to open file for writing\n");
     return -1;
   }
-
+  
   fwrite(fileMarker, sizeof(char), 12, f); //file-type marker
   fwrite(&fileVersion, sizeof(uint32_t), 1, f); //32 bit uint for file version
   fwrite(&fileSize, sizeof(uint32_t), 1, f); //size of file in bytes (num bytes)
@@ -394,7 +395,7 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   fwrite(&pc.y_pos, sizeof(uint8_t), 1, f); //write player x pos
   fwrite(dungeon_hardness, sizeof(dungeon_hardness), 1, f); //writes dungeon hardness array
   uint16_t nRoom = htobe16(*num_rooms);
-  fwrite(&nRoom, sizeof(num_rooms), 1, f); //writes number of rooms
+  fwrite(&nRoom, sizeof(nRoom), 1, f); //writes number of rooms
 
   for (int i = 0; i < *num_rooms; i++) //writes all rooms x,y coord and dimensions
   {
@@ -402,8 +403,9 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     fwrite(&rooms[i].y_pos, sizeof(uint8_t), 1, f);
     fwrite(&rooms[i].x_width, sizeof(uint8_t), 1, f);
     fwrite(&rooms[i].y_height, sizeof(uint8_t), 1, f);
+    printf("true value x,y,x dim, y dim: %d, %d, %d, %d\n", rooms[i].x_pos, rooms[i].y_pos, rooms[i].x_width, rooms[i].y_height);
   }
-
+  
   uint16_t nUp = htobe16(*num_upstair);
   fwrite(&nUp, sizeof(uint16_t), 1, f);	//writes number of upstairs along with x,y pos
   for (int i = 0; i < *num_upstair; i++)
@@ -413,8 +415,8 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     fwrite(&x_pos, sizeof(uint8_t), 1, f);
     fwrite(&y_pos, sizeof(uint8_t), 1, f);
   }
-
-  uint16_t nDown = htobe16(*num_downstair); 
+  
+  uint16_t nDown = htobe16(*num_downstair);
   fwrite(&nDown, sizeof(uint16_t), 1, f); //writes number of downstairs along with x,y pos
   for (int i = 0; i < *num_downstair; i++)
   {
@@ -463,6 +465,7 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   fread(dungeon_hardness, sizeof(dungeon_hardness), 1, f); //gets dungeon hardness array
   fread(&nRooms, sizeof(uint16_t), 1, f); //gets number of rooms
   *num_rooms = be16toh(nRooms);
+  //printf("num rooms: %d\n", *num_rooms);
 
   rooms = malloc((*num_rooms) * sizeof(room_t)); //allocate room size
   for (int i = 0; i < *num_rooms; i++) //gets rooms x,y pos and dims
@@ -471,26 +474,31 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     fread(&rooms[i].y_pos, sizeof(uint8_t), 1, f);
     fread(&rooms[i].x_width, sizeof(uint8_t), 1, f);
     fread(&rooms[i].y_height, sizeof(uint8_t), 1, f);
+    //printf("x: %d, y: %d, x_dim: %d, y_dim:%d\n", rooms[i].x_pos, rooms[i].y_pos, rooms[i].x_width, rooms[i].y_height);
   }
   
   fread(&num_up, sizeof(uint16_t), 1, f); //gets number of upstairs
   *num_upstair = be16toh(num_up);
+  printf("num up: %d\n", *num_upstair);
   upstairs = malloc((*num_upstair) * sizeof(stair_t));
   for (int i = 0; i < *num_upstair; i++)  //gets x,y pos for upstairs
   {
     fread(&upstairs[i].x_pos, sizeof(uint8_t), 1, f);
     fread(&upstairs[i].y_pos, sizeof(uint8_t), 1, f);
+    //printf("up x,y: %d,%d\n", upstairs[i].x_pos, upstairs[i].y_pos);
     upstairs[i].direction = 1;
   }
   
 
   fread(&num_down, sizeof(uint16_t), 1, f);  //gets number of downstairs
   *num_downstair = be16toh(num_down);
+  //printf("num down: %d\n", *num_downstair);
   downstairs = malloc((*num_downstair) * sizeof(stair_t));
   for (int i = 0; i < *num_downstair; i++)  //gets x,y pos for downstairs
   {
     fread(&downstairs[i].x_pos, sizeof(uint8_t), 1, f);
     fread(&downstairs[i].y_pos, sizeof(uint8_t), 1, f);
+    //printf("up x,y: %d,%d\n", downstairs[i].x_pos, downstairs[i].y_pos);
     downstairs[i].direction = 0;
   }
 
