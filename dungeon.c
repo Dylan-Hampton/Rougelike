@@ -471,7 +471,6 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   
   fread(&num_up, sizeof(uint16_t), 1, f); //gets number of upstairs
   *num_upstair = be16toh(num_up);
-  printf("num up: %d\n", *num_upstair);
   upstairs = malloc((*num_upstair) * sizeof(stair_t));
   for (int i = 0; i < *num_upstair; i++)  //gets x,y pos for upstairs
   {
