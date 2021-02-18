@@ -146,7 +146,7 @@ void create_stairs() {
       {
 	if (dungeon_display[y][x] == 1 && upperstair)
 	{
-	  dungeon_display[y + 1][x + 1] = 3;
+	  dungeon_display[y + 1][x + 1] = 4;
 	  dungeon_hardness[y + 1][x + 1] = 0;
 	  upperstair = 0;
 	  upstairs[0].x_pos = x + 1;
@@ -163,7 +163,7 @@ void create_stairs() {
     {
       if (dungeon_display[y][x] == 1 && lowerstair)
       {
-	dungeon_display[y - 1][x - 1] = 4;
+	dungeon_display[y - 1][x - 1] = 3;
 	dungeon_hardness[y - 1][x - 1] = 0;
 	lowerstair = 0;
 	downstairs[0].x_pos = x - 1;
