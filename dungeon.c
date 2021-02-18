@@ -403,7 +403,6 @@ int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     fwrite(&rooms[i].y_pos, sizeof(uint8_t), 1, f);
     fwrite(&rooms[i].x_width, sizeof(uint8_t), 1, f);
     fwrite(&rooms[i].y_height, sizeof(uint8_t), 1, f);
-    printf("true value x,y,x dim, y dim: %d, %d, %d, %d\n", rooms[i].x_pos, rooms[i].y_pos, rooms[i].x_width, rooms[i].y_height);
   }
   
   uint16_t nUp = htobe16(*num_upstair);
@@ -451,21 +450,15 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
 
  
   fread(fileMarker, sizeof(char), 12, f); //gets file-type marker
-  //printf("mark: %s\n", fileMarker);
   fread(&version, sizeof(uint32_t), 1, f); //gets file version
   version = be32toh(version);
-  //printf("ver: %d\n", version);
   fread(&size, sizeof(uint32_t), 1, f); //gets size of file in bytes (num bytes)
   size = be32toh(size);
-  //printf("size: %d\n", size);
   fread(&pc.x_pos, sizeof(uint8_t), 1, f); //gets player y pos
-  //printf("pc x: %d\n", pc.x_pos);
   fread(&pc.y_pos, sizeof(uint8_t), 1, f); //gets player x pos
-  //printf("pc y: %d\n", pc.y_pos);
   fread(dungeon_hardness, sizeof(dungeon_hardness), 1, f); //gets dungeon hardness array
   fread(&nRooms, sizeof(uint16_t), 1, f); //gets number of rooms
   *num_rooms = be16toh(nRooms);
-  //printf("num rooms: %d\n", *num_rooms);
 
   rooms = malloc((*num_rooms) * sizeof(room_t)); //allocate room size
   for (int i = 0; i < *num_rooms; i++) //gets rooms x,y pos and dims
@@ -474,7 +467,6 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
     fread(&rooms[i].y_pos, sizeof(uint8_t), 1, f);
     fread(&rooms[i].x_width, sizeof(uint8_t), 1, f);
     fread(&rooms[i].y_height, sizeof(uint8_t), 1, f);
-    //printf("x: %d, y: %d, x_dim: %d, y_dim:%d\n", rooms[i].x_pos, rooms[i].y_pos, rooms[i].x_width, rooms[i].y_height);
   }
   
   fread(&num_up, sizeof(uint16_t), 1, f); //gets number of upstairs
@@ -485,34 +477,22 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
   {
     fread(&upstairs[i].x_pos, sizeof(uint8_t), 1, f);
     fread(&upstairs[i].y_pos, sizeof(uint8_t), 1, f);
-    //printf("up x,y: %d,%d\n", upstairs[i].x_pos, upstairs[i].y_pos);
     upstairs[i].direction = 1;
   }
   
 
   fread(&num_down, sizeof(uint16_t), 1, f);  //gets number of downstairs
   *num_downstair = be16toh(num_down);
-  //printf("num down: %d\n", *num_downstair);
   downstairs = malloc((*num_downstair) * sizeof(stair_t));
   for (int i = 0; i < *num_downstair; i++)  //gets x,y pos for downstairs
   {
     fread(&downstairs[i].x_pos, sizeof(uint8_t), 1, f);
     fread(&downstairs[i].y_pos, sizeof(uint8_t), 1, f);
-    //printf("up x,y: %d,%d\n", downstairs[i].x_pos, downstairs[i].y_pos);
     downstairs[i].direction = 0;
   }
 
   fclose(f);
-  /*
-  for (int r = 0; r < DUNGEON_ROW; r++)
-  {
-    for (int c = 0; c < DUNGEON_COL; c++)
-    {
-      printf("%3d ", dungeon_hardness[r][c]);
-    }
-    printf("\n");
-  }
-  */
+
   //setting loaded dungeon to be printed
   
   for(int r = 0; r < DUNGEON_ROW; r++) //Place corridors (any extra will be overwritten)
