@@ -1,12 +1,14 @@
 #ifndef DUNGEON_H
 #define DUNGEON_H
 
+#include "heap.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <stdint.h>
 #include <endian.h>
+#include <limits.h>
 
 //Constants
 #define DUNGEON_ROW 21
@@ -15,6 +17,9 @@
 #define MAX_ROOMS   10
 
 //Prototypes
+void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
+void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
+void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
 void print_dungeon(); //Prints out the dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
 void create_rooms(); //Creates 6 random rooms of random but minimum size

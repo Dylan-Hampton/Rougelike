@@ -2,16 +2,16 @@
 #include "dungeon.h"
 
 //prototypes
-static void generate_nonTunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
-static void generate_tunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 static int32_t monster_path_cmp(const void *key, const void *with);
+//void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
+//void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 
 //returns + if 1st bigger, - if second bigger, 0 if equal
 static int32_t monster_path_cmp(const void *key, const void *with) {
   return ((monster_path_t *) key)->cost - ((monster_path_t *) with)->cost;
 }
 
-static void generate_nonTunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y)
+void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y)
 {
   static monster_path_t path[DUNGEON_ROW][DUNGEON_COL], *p;
   static uint32_t initialized = 0;
@@ -22,9 +22,9 @@ static void generate_nonTunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEO
   //Initalize heap with positions
   if (!initialized)
   {
-    for (y = 0; y < DUNGEON_Y; y++)
+    for (y = 0; y < DUNGEON_ROW; y++)
     {
-      for (x = 0; x < DUNGEON_X; x++)
+      for (x = 0; x < DUNGEON_COL; x++)
       {
         path[y][x].pos[r] = y;
         path[y][x].pos[c] = x;
@@ -34,9 +34,9 @@ static void generate_nonTunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEO
   }
 
   //Initial heap costs to infinity
-  for (y = 0; y < DUNGEON_Y; y++)
+  for (y = 0; y < DUNGEON_ROW; y++)
   {
-    for (x = 0; x < DUNGEON_X; x++)
+    for (x = 0; x < DUNGEON_COL; x++)
     {
       path[y][x].cost = INT_MAX;
     }
@@ -47,11 +47,11 @@ static void generate_nonTunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEO
 
   heap_init(&h, monster_path_cmp, NULL);
   //Adding any valid moves to the heap
-  for (y = 0; y < DUNGEON_Y; y++)
+  for (y = 0; y < DUNGEON_ROW; y++)
   {
-    for (x = 0; x < DUNGEON_X; x++)
+    for (x = 0; x < DUNGEON_COL; x++)
     {
-      if ((dungeon_hardness[y][x] == 0) || !(y > DUNGEON_ROW - 1 || y < 0) || !(x > DUNGEON_COL - 1 || x < 0))
+      if ((dungeon_hardness[y][x] == 0) && !(y > DUNGEON_ROW - 1 || y < 0) && !(x > DUNGEON_COL - 1 || x < 0))
       {
 	path[y][x].hn = heap_insert(&h, &path[y][x]);
       } else {
@@ -137,10 +137,14 @@ static void generate_nonTunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEO
 				   [p->pos[c] + 1].hn);
     }
   }
-  
+  for (int r = 0; r < DUNGEON_ROW; r++) {
+		for (int c = 0; c < DUNGEON_COL; c++) {
+			monster_dist[r][c] = path[r][c].cost;
+		}
+	}
 }
 
-static void generate_tunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y)
+void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y)
 {
   static monster_path_t path[DUNGEON_ROW][DUNGEON_COL], *p;
   static uint32_t initialized = 0;
@@ -151,9 +155,9 @@ static void generate_tunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEON_C
   //Initalize heap with positions
   if (!initialized)
   {
-    for (y = 0; y < DUNGEON_Y; y++)
+    for (y = 0; y < DUNGEON_ROW; y++)
     {
-      for (x = 0; x < DUNGEON_X; x++)
+      for (x = 0; x < DUNGEON_COL; x++)
       {
         path[y][x].pos[r] = y;
         path[y][x].pos[c] = x;
@@ -163,9 +167,9 @@ static void generate_tunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEON_C
   }
 
   //Initial heap costs to infinity
-  for (y = 0; y < DUNGEON_Y; y++)
+  for (y = 0; y < DUNGEON_ROW; y++)
   {
-    for (x = 0; x < DUNGEON_X; x++)
+    for (x = 0; x < DUNGEON_COL; x++)
     {
       path[y][x].cost = INT_MAX;
     }
@@ -176,11 +180,11 @@ static void generate_tunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEON_C
 
   heap_init(&h, monster_path_cmp, NULL);
   //Adding any valid moves to the heap
-  for (y = 0; y < DUNGEON_Y; y++)
+  for (y = 0; y < DUNGEON_ROW; y++)
   {
-    for (x = 0; x < DUNGEON_X; x++)
+    for (x = 0; x < DUNGEON_COL; x++)
     {
-      if ((dungeon_hardness[y][x] != 255) || !(y > DUNGEON_ROW - 1 || y < 0) || !(x > DUNGEON_COL - 1 || x < 0))
+      if ((dungeon_hardness[y][x] != 255) && !(y > DUNGEON_ROW - 1 || y < 0) && !(x > DUNGEON_COL - 1 || x < 0))
       {
 	path[y][x].hn = heap_insert(&h, &path[y][x]);
       } else {
@@ -266,5 +270,9 @@ static void generate_tunnel_dist_map(int dungeon_hardness[DUNGEON_ROW][DUNGEON_C
                                            [p->pos[c] + 1].hn);
     }
   }
-  
+  for (int r = 0; r < DUNGEON_ROW; r++) {
+		for (int c = 0; c < DUNGEON_COL; c++) {
+			monster_dist[r][c] = path[r][c].cost;
+		}
+	}
 }

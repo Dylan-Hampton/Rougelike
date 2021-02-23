@@ -1,5 +1,5 @@
-dungeon: dungeon.c dungeon.h heap.c heap.h 
-	gcc -Wall -Werror -ggdb3 -g dungeon.c heap.c -o dungeon
+dungeon: dungeon.c dungeon.h heap.c heap.h path_finding.c
+	gcc -Wall -Werror -ggdb3 -g path_finding.c dungeon.c heap.c -o dungeon
 
 clean:
 	rm -f dungeon

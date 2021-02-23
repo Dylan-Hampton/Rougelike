@@ -1,6 +1,8 @@
 #include "dungeon.h"
 
 //Globals -I'm pretty sure we are allowed to use?
+int dungeon_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for tunneling monsters
+int dungeon_non_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for non-tunneling monsters 
 int dungeon_display[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for outputting text 
 uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for hardness level  hardness goes from 0 - 255 (0 meaning room or corridor, 255 meaning immutable)
 room_t *rooms;
@@ -49,7 +51,7 @@ int main(int argc, char *argv[]) {
     create_paths(&num_rooms);
     set_hardness();
   }
-  
+
   if (save == 1)
   { 
     writeErr = save_dungeon(&num_rooms, &num_upstair, &num_downstair); // save dungeon to file
@@ -58,12 +60,20 @@ int main(int argc, char *argv[]) {
   {
     return -1;
   }	
-  print_dungeon();
+  
+	// print dungeon_display
+	print_dungeon();
+	// making dist maps and printing them
+	// non tunneling
+	generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
+	print_dist_map(dungeon_non_tunnel_map);
+	printf("\n\n");
+	// tunneling
+	generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
+	print_dist_map(dungeon_tunnel_map);
   
   return 0;
 }
-
-
 
 void set_hardness() { //sets any non-rock to zero hardness
   for (int r = 0; r < DUNGEON_ROW; r++)
@@ -278,6 +288,25 @@ void set_dungeon(){
   }
 }
 
+void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
+	for (int r = 0; r < DUNGEON_ROW; r++)
+	{
+		for (int c = 0; c < DUNGEON_COL; c++)
+		{
+			if (r == pc.y_pos && c == pc.x_pos) {
+				printf("@");
+			} else if (dist_map[r][c] <= 0){
+				printf("X");
+			} else if (dist_map[r][c] != INT_MAX) {
+				printf("%d", (dist_map[r][c] % 10));		
+			} else {
+				printf(" ");
+			}
+		}
+		printf("\n");
+	}
+}
+
 //A 0 == rock(space)
 //A 1 == room floor('.')
 //A 2 == corridor('#')
@@ -296,8 +325,7 @@ void print_dungeon(){
         case 0:
 	  printf(" ");
 	  break;
-
-        case 1:
+case 1:
 	  printf(".");
 	  break;
 

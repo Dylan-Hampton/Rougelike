@@ -1,6 +1,7 @@
+2/22/2021 DH/BN/CB: Added print distance maps function, and bugtested //1.03 assignment done
 2/21/2021 DH/BN: Implemented distance map in path_finding.c for both tunneling and non-tunneling monsters
 2/21/2021 DH/BN: Added dungeon.h, added path_finding.c
-2/17/2021 DH/BN/CB: Added endianess
+2/17/2021 DH/BN/CB: Added endianess //1.02 assignment done
 2/17/2021 BN: fixed saving and loading the arrays, and fixed loading rooms from a file
 2/17/2021 DH/BN/CB: Worked on correcting load_dungeon
 2/16/2021 DH: Completed save dungeon, working on tracing segfaults in read dungeon
@@ -10,7 +11,7 @@
 2/13/2021 DH: Added parallel 2d array for storing hardness factor
 2/12/2021 BN: Added create_player and cleaned up save and load tag setting
 2/11/2021 DH: Added save / load tag checks and set up save_dungeon and load_dungeon skeletons
-2/8/2021 BN/DH: Added simple path generation
+2/8/2021 BN/DH: Added simple path generation // 1.01 assignment done
 2/5/2021 BN: Added stair generation and fixed some bugs
 2/5/2021 DH: Added a check to avoid two rooms touching
 2/4/2021 DH: Created Makefile and changed formatting.
