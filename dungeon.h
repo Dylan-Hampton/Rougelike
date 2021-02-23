@@ -32,27 +32,27 @@ int load_dungeon(); //Reads dungeon from binary file in the .../.rlg327/dungeon 
 
 //Struct defs
 typedef struct room {
-  int x_pos;
-  int y_pos;
-  int x_width;
-  int y_height;
+	int x_pos;
+	int y_pos;
+	int x_width;
+	int y_height;
 } room_t;
 
 typedef struct pc {
-  int x_pos;
-  int y_pos;
+	int x_pos;
+	int y_pos;
 } pc_t;
 
 typedef struct stair {
-  int x_pos;
-  int y_pos;
-  int direction;
+	int x_pos;
+	int y_pos;
+	int direction;
 } stair_t;
 
 typedef struct monster_path {
-  heap_node_t *hn; //heap node pointer
-  int pos[2]; //r,c
-  int cost; 
+	heap_node_t *hn; //heap node pointer
+	int pos[2]; //r,c
+	int cost; 
 } monster_path_t;
 
 #endif
