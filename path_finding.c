@@ -7,10 +7,12 @@ static int32_t monster_path_cmp(const void *key, const void *with);
 //void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 
 //returns + if 1st bigger, - if second bigger, 0 if equal
+//Most of this code is borrowed from Sheaffer
 static int32_t monster_path_cmp(const void *key, const void *with) {
 	return ((monster_path_t *) key)->cost - ((monster_path_t *) with)->cost;
 }
 
+//Most of this code is borrowed from Sheaffer
 void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y)
 {
 	static monster_path_t path[DUNGEON_ROW][DUNGEON_COL], *p;
@@ -144,6 +146,7 @@ void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_C
 	}
 }
 
+//Most of this code is borrowed from Sheaffer
 void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y)
 {
 	static monster_path_t path[DUNGEON_ROW][DUNGEON_COL], *p;
