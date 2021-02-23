@@ -17,8 +17,11 @@
 #define MAX_ROOMS   10
 
 //Prototypes
+//path_finding.c
 void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
+
+//dungeon.c
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
 void print_dungeon(); //Prints out the dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
