@@ -1,6 +1,6 @@
-2/22/2021 DH/BN/CB: Added print distance maps function, and bugtested //1.03 assignment done
+2/22/2021 DH/BN/CB: Added print distance maps function in dungeon.c, and bugtested //1.03 assignment done
 2/21/2021 DH/BN: Implemented distance map in path_finding.c for both tunneling and non-tunneling monsters
-2/21/2021 DH/BN: Added dungeon.h, added path_finding.c
+2/21/2021 DH/BN: Added dungeon.h, added path_finding.c, heap.c, heap.h
 2/17/2021 DH/BN/CB: Added endianess //1.02 assignment done
 2/17/2021 BN: fixed saving and loading the arrays, and fixed loading rooms from a file
 2/17/2021 DH/BN/CB: Worked on correcting load_dungeon
