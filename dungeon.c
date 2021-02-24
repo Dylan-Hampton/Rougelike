@@ -63,11 +63,12 @@ int main(int argc, char *argv[]) {
 
 	// print dungeon_display
 	print_dungeon();
+	printf("\n");
 	// making dist maps and printing them
 	// non tunneling
 	generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
 	print_dist_map(dungeon_non_tunnel_map);
-	printf("\n\n");
+	printf("\n");
 	// tunneling
 	generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
 	print_dist_map(dungeon_tunnel_map);
@@ -299,6 +300,8 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 				printf("X");
 			} else if (dist_map[r][c] != INT_MAX) {
 				printf("%d", (dist_map[r][c] % 10));		
+			} else if (dungeon_hardness[r][c] == 0) { //janky but works
+			  printf("X");
 			} else {
 				printf(" ");
 			}
