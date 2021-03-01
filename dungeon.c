@@ -9,11 +9,12 @@ room_t *rooms;
 pc_t pc;
 stair_t *upstairs;
 stair_t *downstairs;
+character_t *entities;
 
 int main(int argc, char *argv[]) {
 
   srand(time(NULL));
-  int load = 0, save = 0;
+  int load = 0, save = 0, num_mon = 10;
   int readErr = 0, writeErr = 0, num_rooms = 0, num_upstair = 0, num_downstair = 0;
   //check for save or load switches
   if(argc > 1)
@@ -28,12 +29,18 @@ int main(int argc, char *argv[]) {
       {
         load = 1;
       }
+      if(!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "-m"))
+      {
+        num_mon = atoi(argv[++i]);
+        // entities = malloc(sizeof(character_t) * (num_mon + 1));
+      }
     }
   }
 
   if (load == 1)
   {
     readErr = load_dungeon(&num_rooms, &num_upstair, &num_downstair); // load from file
+    create_entities(num_rooms, num_mon); 
   }
 
   else
@@ -48,6 +55,7 @@ int main(int argc, char *argv[]) {
     create_rooms(&num_rooms);
     create_stairs();
     create_player();
+    create_entities(num_rooms, num_mon);
     create_paths(&num_rooms);
     set_hardness();
   }
@@ -63,17 +71,66 @@ int main(int argc, char *argv[]) {
 
   // print dungeon_display
   print_dungeon();
-  printf("\n");
+  // printf("\n");
   // making dist maps and printing them
   // non tunneling
   generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
-  print_dist_map(dungeon_non_tunnel_map);
-  printf("\n");
+  // print_dist_map(dungeon_non_tunnel_map);
+  // printf("\n");
   // tunneling
   generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
-  print_dist_map(dungeon_tunnel_map);
+  // print_dist_map(dungeon_tunnel_map);
 
   return 0;
+}
+
+void create_entities(int num_rooms, int num_monsters) {
+  //int entities_index = 1;
+  // character_t player; 
+  // player.x_pos = pc.x_pos;
+  // player.y_pos = pc.y_pos;
+  // player.speed = 10;
+  // player.turn = 0;
+  // player.is_pc = 1;
+  // player.pc = &pc;
+  // entities[0] = player;
+  int player_room = 0;
+  for (int room = 0; room < num_rooms; room++) {
+    for (int x = rooms[room].x_pos; x < rooms[room].x_pos + rooms[room].x_width; x++) {
+      for (int y = rooms[room].y_pos; y < rooms[room].y_pos + rooms[room].y_height; y++) {
+        if (x == pc.x_pos && y == pc.y_pos) {
+          player_room = room; 
+        }
+      }
+    }
+  }
+  int monsters = num_monsters;
+  while (monsters > 0) {
+    for (int room = 0; room < num_rooms; room++) {
+      if (room != player_room) {
+        int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
+        int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
+        if (dungeon_display[y][x] == 1 && monsters > 0) {
+          dungeon_display[y][x] = 6;
+          /*
+          npc_t npc;
+          npc.x_pos = x;
+          npc.y_pos = y;
+          npc.type = 'M';
+          character_t monster; 
+          monster.x_pos = x;
+          monster.y_pos = y;
+          monster.speed = 10;
+          monster.turn = 0;
+          monster.is_pc = 0;
+          monster.npc = &npc;
+          entities[entities_index++] = monster;
+          */
+          monsters--; 
+        }
+      }
+    }
+  }
 }
 
 void set_hardness() { //sets any non-rock to zero hardness
@@ -310,12 +367,13 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
   }
 }
 
-//A 0 == rock(space)
-//A 1 == room floor('.')
-//A 2 == corridor('#')
-//A 3 == downstairs('>')
-//A 4 == upstairs('<')
-//A 5 == player character('@')
+// 0 == rock(space)
+// 1 == room floor('.')
+// 2 == corridor('#')
+// 3 == downstairs('>')
+// 4 == upstairs('<')
+// 5 == player character('@')
+// 6 == monster('M')
 void print_dungeon(){
 
   for(int r = 0; r < DUNGEON_ROW; r++)
@@ -348,9 +406,13 @@ void print_dungeon(){
           printf("@");
           break;
 
+        case 6:
+          printf("M");
+          break;
+
           //E for error
         default:
-          printf("E");
+          printf("Error");
           break;
       }
 

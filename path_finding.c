@@ -12,6 +12,12 @@ static int32_t monster_path_cmp(const void *key, const void *with) {
   return ((monster_path_t *) key)->cost - ((monster_path_t *) with)->cost;
 }
 
+//Moves least turn character
+void next_turn(int monster_dist[DUNGEON_ROW][DUNGEON_COL])
+{
+  
+}
+
 //Most of this code is borrowed from Sheaffer
 void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y)
 {

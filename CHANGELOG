@@ -1,3 +1,4 @@
+2/28/2021 DH/BN: Added create_entities method and added monster generation
 2/22/2021 DH/BN/CB: Added print distance maps function in dungeon.c, and bugtested //1.03 assignment done
 2/21/2021 DH/BN: Implemented distance map in path_finding.c for both tunneling and non-tunneling monsters
 2/21/2021 DH/BN: Added dungeon.h, added path_finding.c, heap.c, heap.h

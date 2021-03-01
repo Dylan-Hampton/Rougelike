@@ -32,6 +32,7 @@ void create_player(); //Creates the player and places them in the highest room c
 void set_hardness(); //sets the hardness of the rocks in the dungeon
 int save_dungeon(); //Saves dungeon in binary file in the .../.rlg327/dungeon  folder
 int load_dungeon(); //Reads dungeon from binary file in the .../.rlg327/dungeon  folder
+void create_entities(int num_rooms, int num_monsters); // creates the monsters and player
 
 //Struct defs
 typedef struct room {
@@ -45,6 +46,22 @@ typedef struct pc {
   int x_pos;
   int y_pos;
 } pc_t;
+
+typedef struct npc {
+  int x_pos;
+  int y_pos;
+  char type;
+} npc_t;
+
+typedef struct character {
+  int x_pos;
+  int y_pos;
+  int speed;
+  int turn;
+  int is_pc;
+  npc_t *npc;
+  pc_t *pc;
+} character_t;
 
 typedef struct stair {
   int x_pos;
