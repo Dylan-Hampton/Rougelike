@@ -15,6 +15,10 @@
 #define DUNGEON_COL 80
 #define MIN_ROOMS    6
 #define MAX_ROOMS   10
+#define BIT_INT     0x1 
+#define BIT_TELE    0x2 
+#define BIT_TUN     0x4 
+#define BIT_ERR     0x8 
 
 //Struct defs
 typedef struct room {
@@ -32,6 +36,7 @@ typedef struct pc {
 typedef struct npc {
   int x_pos;
   int y_pos;
+  int characteristics;
   char type;
 } npc_t;
 
@@ -43,6 +48,7 @@ typedef struct character {
   npc_t *npc;
   pc_t *pc;
   int is_pc;
+  int is_alive;
 } character_t;
 
 typedef struct stair {

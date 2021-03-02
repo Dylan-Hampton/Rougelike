@@ -82,12 +82,10 @@ int main(int argc, char *argv[]) {
   // print_dist_map(dungeon_tunnel_map);
 
   entities_heap = generate_entities_heap(num_mon, entities);
-  /*
-     for( ;; )
-     {
-
-     }
-   */
+  while(1)
+  {
+    next_turn(dungeon_tunnel_map, &entities_heap);
+  }
   return 0;
 }
 
@@ -99,6 +97,7 @@ void create_entities(int num_rooms, int num_monsters) {
   player.turn = 0;
   player.is_pc = 1;
   player.pc = &pc;
+  player.is_alive = 1;
   entities[pc.y_pos][pc.x_pos] = &player;
   int player_room = 0;
   for (int room = 0; room < num_rooms; room++)
@@ -132,6 +131,7 @@ void create_entities(int num_rooms, int num_monsters) {
           npc_t npc;
           npc.x_pos = x;
           npc.y_pos = y;
+          npc.characteristics = mon_type;
           npc.type = get_monster_type(mon_type);
           character_t monster; 
           monster.x_pos = x;
@@ -140,6 +140,7 @@ void create_entities(int num_rooms, int num_monsters) {
           monster.turn = 0;
           monster.is_pc = 0;
           monster.npc = &npc;
+          monster.is_alive = 1;
           entities[y][x] = &monster;
           monsters--;
         }
