@@ -9,7 +9,7 @@ room_t *rooms;
 pc_t pc;
 stair_t *upstairs;
 stair_t *downstairs;
-character_t *entities;
+character_t *entities[DUNGEON_ROW][DUNGEON_COL];
 heap_t entities_heap;
 
 int main(int argc, char *argv[]) {
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   {
     return -1;
   }
-  
+
   // print dungeon_display
   print_dungeon(num_mon);
   // printf("\n");
@@ -83,25 +83,23 @@ int main(int argc, char *argv[]) {
 
   entities_heap = generate_entities_heap(num_mon, entities);
   /*
-  for( ;; )
-  {
-    
-  }
-  */
+     for( ;; )
+     {
+
+     }
+   */
   return 0;
 }
 
 void create_entities(int num_rooms, int num_monsters) {
-  entities = malloc(sizeof(character_t) * (num_monsters + 1));
-  int entities_index = 1;
-   character_t player; 
-   player.x_pos = pc.x_pos;
-   player.y_pos = pc.y_pos;
-   player.speed = 10;
-   player.turn = 0;
-   player.is_pc = 1;
-   player.pc = pc;
-   entities[0] = player;
+  character_t player; 
+  player.x_pos = pc.x_pos;
+  player.y_pos = pc.y_pos;
+  player.speed = 10;
+  player.turn = 0;
+  player.is_pc = 1;
+  player.pc = &pc;
+  entities[pc.y_pos][pc.x_pos] = &player;
   int player_room = 0;
   for (int room = 0; room < num_rooms; room++)
   {
@@ -110,7 +108,7 @@ void create_entities(int num_rooms, int num_monsters) {
       for (int y = rooms[room].y_pos; y < rooms[room].y_pos + rooms[room].y_height; y++)
       {
         if (x == pc.x_pos && y == pc.y_pos)
-	{
+        {
           player_room = room; 
         }
       }
@@ -129,8 +127,8 @@ void create_entities(int num_rooms, int num_monsters) {
         int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
         if (dungeon_display[y][x] == 1 && monsters > 0)
-	{
-          dungeon_display[y][x] = 6;
+        {
+          dungeon_display[y][x] = 10 + mon_type;
           npc_t npc;
           npc.x_pos = x;
           npc.y_pos = y;
@@ -141,8 +139,8 @@ void create_entities(int num_rooms, int num_monsters) {
           monster.speed = 10;
           monster.turn = 0;
           monster.is_pc = 0;
-          monster.npc = npc;
-          entities[entities_index++] = monster;
+          monster.npc = &npc;
+          entities[y][x] = &monster;
           monsters--;
         }
       }
@@ -446,7 +444,7 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 // 3 == downstairs('>')
 // 4 == upstairs('<')
 // 5 == player character('@')
-// 6 == monster('M')
+// 6 == monster('type')
 void print_dungeon(int num_mon){
 
   for(int r = 0; r < DUNGEON_ROW; r++)
@@ -478,16 +476,25 @@ void print_dungeon(int num_mon){
           printf("@");
           break;
 
-        case 6:
-	  for(int i = 1; i <= num_mon; i++)
-	  {
-	    if(entities[i].y_pos == r && entities[i].x_pos == c)
-	    {
-	      printf("%c", entities[i].npc.type);
-	    }
-	  }    
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+        case 16:
+        case 17:
+        case 18:
+        case 19:
+        case 20:
+        case 21:
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+          printf("%c", get_monster_type(dungeon_display[r][c] - 10));
           break;
-	  
+
         default:
           printf("Error");
           break;

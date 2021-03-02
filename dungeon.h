@@ -40,11 +40,9 @@ typedef struct character {
   int y_pos;
   int speed;
   int turn;
-  union {
-    npc_t npc;
-    pc_t pc;
-    int is_pc;
-  };
+  npc_t *npc;
+  pc_t *pc;
+  int is_pc;
 } character_t;
 
 typedef struct stair {
@@ -63,7 +61,7 @@ typedef struct monster_path {
 //path_finding.c
 void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
-heap_t generate_entities_heap(int num_mon, character_t entities[num_mon + 1]);
+heap_t generate_entities_heap(int num_mon, character_t *entities[DUNGEON_ROW][DUNGEON_COL]);
 void next_turn(int monster_dist[DUNGEON_ROW][DUNGEON_COL], heap_t *h);
 
 //dungeon.c

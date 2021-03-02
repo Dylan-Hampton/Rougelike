@@ -16,17 +16,19 @@ static int32_t character_move_cmp(const void *key, const void *with) {
   return ((character_t *) key)->turn - ((character_t *) with)->turn;
 }
 
-heap_t generate_entities_heap(int num_mon, character_t entities[num_mon + 1])
+heap_t generate_entities_heap(int num_mon, character_t *entities[DUNGEON_ROW][DUNGEON_COL])
 {
   heap_t h;
 
   heap_init(&h, character_move_cmp, NULL);
   //Filling the heap with all entities
-  for (int i = 0; i <= num_mon; i++)
-  {
-    heap_insert(&h, &entities[i]);
-  }
-  
+  for (int r = 0 ; r < DUNGEON_ROW; r++) {
+    for (int c = 0 ; c < DUNGEON_ROW; c++) {
+      if (entities[r][c] != NULL) {
+        heap_insert(&h, &entities[r][c]);
+      }
+    }  
+  }  
   return h;
 }
 
@@ -34,12 +36,12 @@ heap_t generate_entities_heap(int num_mon, character_t entities[num_mon + 1])
 void next_turn(int monster_dist[DUNGEON_ROW][DUNGEON_COL], heap_t *h)
 {
   /*
-  character_t *c = heap_remove_min(h);
-  c->turn += (1000 / c->speed);
+     character_t *c = heap_remove_min(h);
+     c->turn += (1000 / c->speed);
   //update character position
   heap_insert(&h, c);
   //heapify
-  */
+   */
 }
 
 //Most of this code is borrowed from Sheaffer
