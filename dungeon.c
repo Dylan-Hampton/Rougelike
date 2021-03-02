@@ -10,6 +10,7 @@ pc_t pc;
 stair_t *upstairs;
 stair_t *downstairs;
 character_t *entities;
+heap_t entities_heap;
 
 int main(int argc, char *argv[]) {
 
@@ -66,8 +67,8 @@ int main(int argc, char *argv[]) {
   if(writeErr == -1 || readErr == -1) //error handling
   {
     return -1;
-  }	
-
+  }
+  
   // print dungeon_display
   print_dungeon(num_mon);
   // printf("\n");
@@ -80,6 +81,13 @@ int main(int argc, char *argv[]) {
   generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
   // print_dist_map(dungeon_tunnel_map);
 
+  entities_heap = generate_entities_heap(num_mon, entities);
+  /*
+  for( ;; )
+  {
+    
+  }
+  */
   return 0;
 }
 
@@ -127,7 +135,6 @@ void create_entities(int num_rooms, int num_monsters) {
           npc.x_pos = x;
           npc.y_pos = y;
           npc.type = get_monster_type(mon_type);
-	  printf("%c" ,npc.type);
           character_t monster; 
           monster.x_pos = x;
           monster.y_pos = y;

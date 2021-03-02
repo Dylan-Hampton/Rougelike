@@ -16,25 +16,6 @@
 #define MIN_ROOMS    6
 #define MAX_ROOMS   10
 
-//Prototypes
-//path_finding.c
-void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
-void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
-
-//dungeon.c
-void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
-void print_dungeon(); //Prints out the dungeon
-void set_dungeon(); //Initializes all cells to rock(space)
-void create_rooms(); //Creates 6 random rooms of random but minimum size
-void create_paths(); //Creates paths between each room
-void create_stairs(); //Creates one stair that goes up and one that goes down
-void create_player(); //Creates the player and places them in the highest room corner
-void set_hardness(); //sets the hardness of the rocks in the dungeon
-int save_dungeon(); //Saves dungeon in binary file in the .../.rlg327/dungeon  folder
-int load_dungeon(); //Reads dungeon from binary file in the .../.rlg327/dungeon  folder
-void create_entities(int num_rooms, int num_monsters); // creates the monsters and player
-char get_monster_type(int n); // gets monster type based on number n
-
 //Struct defs
 typedef struct room {
   int x_pos;
@@ -77,5 +58,26 @@ typedef struct monster_path {
   int pos[2]; //r,c
   int cost; 
 } monster_path_t;
+
+//Prototypes
+//path_finding.c
+void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
+void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
+heap_t generate_entities_heap(int num_mon, character_t entities[num_mon + 1]);
+void next_turn(int monster_dist[DUNGEON_ROW][DUNGEON_COL], heap_t *h);
+
+//dungeon.c
+void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
+void print_dungeon(); //Prints out the dungeon
+void set_dungeon(); //Initializes all cells to rock(space)
+void create_rooms(); //Creates 6 random rooms of random but minimum size
+void create_paths(); //Creates paths between each room
+void create_stairs(); //Creates one stair that goes up and one that goes down
+void create_player(); //Creates the player and places them in the highest room corner
+void set_hardness(); //sets the hardness of the rocks in the dungeon
+int save_dungeon(); //Saves dungeon in binary file in the .../.rlg327/dungeon  folder
+int load_dungeon(); //Reads dungeon from binary file in the .../.rlg327/dungeon  folder
+void create_entities(int num_rooms, int num_monsters); // creates the monsters and player
+char get_monster_type(int n); // gets monster type based on number n
 
 #endif

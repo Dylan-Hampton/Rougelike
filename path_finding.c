@@ -12,10 +12,34 @@ static int32_t monster_path_cmp(const void *key, const void *with) {
   return ((monster_path_t *) key)->cost - ((monster_path_t *) with)->cost;
 }
 
-//Moves least turn character
-void next_turn(int monster_dist[DUNGEON_ROW][DUNGEON_COL])
+static int32_t character_move_cmp(const void *key, const void *with) {
+  return ((character_t *) key)->turn - ((character_t *) with)->turn;
+}
+
+heap_t generate_entities_heap(int num_mon, character_t entities[num_mon + 1])
 {
+  heap_t h;
+
+  heap_init(&h, character_move_cmp, NULL);
+  //Filling the heap with all entities
+  for (int i = 0; i <= num_mon; i++)
+  {
+    heap_insert(&h, &entities[i]);
+  }
   
+  return h;
+}
+
+//Moves least turn character
+void next_turn(int monster_dist[DUNGEON_ROW][DUNGEON_COL], heap_t *h)
+{
+  /*
+  character_t *c = heap_remove_min(h);
+  c->turn += (1000 / c->speed);
+  //update character position
+  heap_insert(&h, c);
+  //heapify
+  */
 }
 
 //Most of this code is borrowed from Sheaffer
