@@ -1,6 +1,6 @@
 #include "dungeon.h"
 
-//Globals -I'm pretty sure we are allowed to use?
+//Globals
 int dungeon_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for tunneling monsters
 int dungeon_non_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for non-tunneling monsters 
 int dungeon_display[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for outputting text 
@@ -32,7 +32,6 @@ int main(int argc, char *argv[]) {
       if(!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "-m"))
       {
         num_mon = atoi(argv[++i]);
-        // entities = malloc(sizeof(character_t) * (num_mon + 1));
       }
     }
   }
@@ -70,7 +69,7 @@ int main(int argc, char *argv[]) {
   }	
 
   // print dungeon_display
-  print_dungeon();
+  print_dungeon(num_mon);
   // printf("\n");
   // making dist maps and printing them
   // non tunneling
@@ -85,52 +84,119 @@ int main(int argc, char *argv[]) {
 }
 
 void create_entities(int num_rooms, int num_monsters) {
-  //int entities_index = 1;
-  // character_t player; 
-  // player.x_pos = pc.x_pos;
-  // player.y_pos = pc.y_pos;
-  // player.speed = 10;
-  // player.turn = 0;
-  // player.is_pc = 1;
-  // player.pc = &pc;
-  // entities[0] = player;
+  entities = malloc(sizeof(character_t) * (num_monsters + 1));
+  int entities_index = 1;
+   character_t player; 
+   player.x_pos = pc.x_pos;
+   player.y_pos = pc.y_pos;
+   player.speed = 10;
+   player.turn = 0;
+   player.is_pc = 1;
+   player.pc = pc;
+   entities[0] = player;
   int player_room = 0;
-  for (int room = 0; room < num_rooms; room++) {
-    for (int x = rooms[room].x_pos; x < rooms[room].x_pos + rooms[room].x_width; x++) {
-      for (int y = rooms[room].y_pos; y < rooms[room].y_pos + rooms[room].y_height; y++) {
-        if (x == pc.x_pos && y == pc.y_pos) {
+  for (int room = 0; room < num_rooms; room++)
+  {
+    for (int x = rooms[room].x_pos; x < rooms[room].x_pos + rooms[room].x_width; x++)
+    {
+      for (int y = rooms[room].y_pos; y < rooms[room].y_pos + rooms[room].y_height; y++)
+      {
+        if (x == pc.x_pos && y == pc.y_pos)
+	{
           player_room = room; 
         }
       }
     }
   }
+
+  int attempts = 0;
   int monsters = num_monsters;
-  while (monsters > 0) {
-    for (int room = 0; room < num_rooms; room++) {
-      if (room != player_room) {
+  while (monsters > 0 && attempts < 1000)
+  {
+    for (int room = 0; room < num_rooms; room++)
+    {
+      int mon_type = (rand() % 16);
+      if (room != player_room)
+      {
         int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
-        if (dungeon_display[y][x] == 1 && monsters > 0) {
+        if (dungeon_display[y][x] == 1 && monsters > 0)
+	{
           dungeon_display[y][x] = 6;
-          /*
           npc_t npc;
           npc.x_pos = x;
           npc.y_pos = y;
-          npc.type = 'M';
+          npc.type = get_monster_type(mon_type);
+	  printf("%c" ,npc.type);
           character_t monster; 
           monster.x_pos = x;
           monster.y_pos = y;
           monster.speed = 10;
           monster.turn = 0;
           monster.is_pc = 0;
-          monster.npc = &npc;
+          monster.npc = npc;
           entities[entities_index++] = monster;
-          */
-          monsters--; 
+          monsters--;
         }
       }
     }
+    attempts++;
   }
+}
+
+char get_monster_type(int n) {
+  switch(n)
+  {
+    case 0:
+      return '0';
+      break;
+    case 1:
+      return '1';
+      break;
+    case 2:
+      return '2';
+      break;
+    case 3:
+      return '3';
+      break;
+    case 4:
+      return '4';
+      break;
+    case 5:
+      return '5';
+      break;
+    case 6:
+      return '6';
+      break;
+    case 7:
+      return '7';
+      break;
+    case 8:
+      return '8';
+      break;
+    case 9:
+      return '9';
+      break;
+    case 10:
+      return 'a';
+      break;
+    case 11:
+      return 'b';
+      break;
+    case 12:
+      return 'c';
+      break;
+    case 13:
+      return 'd';
+      break;
+    case 14:
+      return 'e';
+      break;
+    case 15:
+      return 'f';
+      break;
+  }
+  return 'Z';
 }
 
 void set_hardness() { //sets any non-rock to zero hardness
@@ -374,13 +440,12 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 // 4 == upstairs('<')
 // 5 == player character('@')
 // 6 == monster('M')
-void print_dungeon(){
+void print_dungeon(int num_mon){
 
   for(int r = 0; r < DUNGEON_ROW; r++)
   {
     for(int c = 0; c < DUNGEON_COL; c++)
     {
-
       switch(dungeon_display[r][c])
       {
         case 0:
@@ -407,10 +472,15 @@ void print_dungeon(){
           break;
 
         case 6:
-          printf("M");
+	  for(int i = 1; i <= num_mon; i++)
+	  {
+	    if(entities[i].y_pos == r && entities[i].x_pos == c)
+	    {
+	      printf("%c", entities[i].npc.type);
+	    }
+	  }    
           break;
-
-          //E for error
+	  
         default:
           printf("Error");
           break;
