@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   // print_dist_map(dungeon_tunnel_map);
 
   entities_heap = generate_entities_heap(num_mon, entities);
-  while(1)
+  for(int i = 0; i < 100; i++)
   {
     next_turn(dungeon_tunnel_map, &entities_heap);
   }
@@ -90,15 +90,15 @@ int main(int argc, char *argv[]) {
 }
 
 void create_entities(int num_rooms, int num_monsters) {
-  character_t player; 
-  player.x_pos = pc.x_pos;
-  player.y_pos = pc.y_pos;
-  player.speed = 10;
-  player.turn = 0;
-  player.is_pc = 1;
-  player.pc = &pc;
-  player.is_alive = 1;
-  entities[pc.y_pos][pc.x_pos] = &player;
+  character_t *player = malloc(sizeof(character_t)); 
+  player->x_pos = pc.x_pos;
+  player->y_pos = pc.y_pos;
+  player->speed = 100;
+  player->turn = 0;
+  player->is_pc = 1;
+  player->pc = &pc;
+  player->is_alive = 1;
+  entities[pc.y_pos][pc.x_pos] = player;
   int player_room = 0;
   for (int room = 0; room < num_rooms; room++)
   {
@@ -120,34 +120,56 @@ void create_entities(int num_rooms, int num_monsters) {
   {
     for (int room = 0; room < num_rooms; room++)
     {
-      int mon_type = (rand() % 16);
       if (room != player_room)
       {
+	int mon_type = (rand() % 16);
         int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
         if (dungeon_display[y][x] == 1 && monsters > 0)
         {
           dungeon_display[y][x] = 10 + mon_type;
-          npc_t npc;
-          npc.x_pos = x;
-          npc.y_pos = y;
-          npc.characteristics = mon_type;
-          npc.type = get_monster_type(mon_type);
-          character_t monster; 
-          monster.x_pos = x;
-          monster.y_pos = y;
-          monster.speed = 10;
-          monster.turn = 0;
-          monster.is_pc = 0;
-          monster.npc = &npc;
-          monster.is_alive = 1;
-          entities[y][x] = &monster;
+          npc_t *npc = malloc(sizeof(npc_t));
+          npc->x_pos = x;
+          npc->y_pos = y;
+          npc->characteristics = mon_type;
+          npc->type = get_monster_type(mon_type);
+          character_t *monster = malloc(sizeof(character_t)); 
+          monster->x_pos = x;
+          monster->y_pos = y;
+          monster->speed = 10;
+          monster->turn = 0;
+          monster->is_pc = 0;
+          monster->npc = npc;
+          monster->is_alive = 1;
+          entities[y][x] = monster;
           monsters--;
         }
       }
     }
     attempts++;
   }
+  /*
+  for (int r = 0; r < DUNGEON_ROW; r++)
+  {
+    for(int c = 0; c < DUNGEON_COL; c++)
+    {
+      if(entities[r][c] != NULL)
+      {
+        printf("x: %d y: %d\n", entities[r][c]->x_pos, entities[r][c]->y_pos);
+	printf("speed: %d\n", entities[r][c]->speed);
+	printf("is_pc: %d\n", entities[r][c]->is_pc);
+	//printf("turn: %d\n", entities[r][c]->turn);
+	printf("is_alive: %d\n", entities[r][c]->is_alive);
+      }
+      else if (entities[r][c] == NULL){
+	printf("NULL -> %d, %d\n", r, c);
+      }
+      else {
+	printf("ERROR\n");
+	}
+    }
+  }
+*/
 }
 
 char get_monster_type(int n) {

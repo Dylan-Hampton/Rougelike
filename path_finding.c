@@ -23,11 +23,9 @@ heap_t generate_entities_heap(int num_mon, character_t *entities[DUNGEON_ROW][DU
   heap_init(&h, character_move_cmp, NULL);
   //Filling the heap with all entities
   for (int r = 0 ; r < DUNGEON_ROW; r++) {
-    for (int c = 0 ; c < DUNGEON_ROW; c++) {
+    for (int c = 0 ; c < DUNGEON_COL; c++) {
       if (entities[r][c] != NULL) {
-        printf("c: %d r:%d\n", c, r);
-        printf("x: %d y:%d\n", entities[r][c]->x_pos, entities[r][c]->y_pos);
-        heap_insert(&h, &entities[r][c]);
+        heap_insert(&h, entities[r][c]);
       }
     }  
   }  
@@ -38,6 +36,7 @@ heap_t generate_entities_heap(int num_mon, character_t *entities[DUNGEON_ROW][DU
 void next_turn(int monster_dist[DUNGEON_ROW][DUNGEON_COL], heap_t *h)
 {
   character_t *c = heap_remove_min(h);
+  printf("Speed: %d  Turn: %d\n  x: %d  y: %d\n", c->speed, c->turn, c->x_pos, c->y_pos);
   c->turn += (1000 / c->speed);
   //update character position
   heap_insert(h, c);
