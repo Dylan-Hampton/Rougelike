@@ -13,12 +13,12 @@
 //Constants
 #define DUNGEON_ROW 21
 #define DUNGEON_COL 80
-#define MIN_ROOMS    6
+#define MIN_ROOMS   6
 #define MAX_ROOMS   10
-#define BIT_INT     0x1 
+#define BIT_SMART   0x1 
 #define BIT_TELE    0x2 
 #define BIT_TUN     0x4 
-#define BIT_ERR     0x8 
+#define BIT_ERAT    0x8 
 
 //Struct defs
 typedef struct room {
@@ -68,11 +68,18 @@ typedef struct monster_path {
 void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 heap_t generate_entities_heap(int num_mon, character_t *entities[DUNGEON_ROW][DUNGEON_COL]);
-void next_turn(int monster_dist[DUNGEON_ROW][DUNGEON_COL], heap_t *h);
+void next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
+	       int dungeon_display[DUNGEON_ROW][DUNGEON_COL],
+	       uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL],
+	       character_t *entities[DUNGEON_ROW][DUNGEON_COL],
+	       int tunnel[DUNGEON_ROW][DUNGEON_COL],
+	       int nontunnel[DUNGEON_ROW][DUNGEON_COL],
+	       heap_t *h);
 
 //dungeon.c
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
 void print_dungeon(); //Prints out the dungeon
+void set_layout(); //sets the layout of dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
 void create_rooms(); //Creates 6 random rooms of random but minimum size
 void create_paths(); //Creates paths between each room

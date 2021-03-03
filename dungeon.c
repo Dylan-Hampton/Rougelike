@@ -2,7 +2,8 @@
 
 //Globals
 int dungeon_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for tunneling monsters
-int dungeon_non_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for non-tunneling monsters 
+int dungeon_non_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for non-tunneling monsters
+int dungeon_layout[DUNGEON_ROW][DUNGEON_COL];
 int dungeon_display[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for outputting text 
 uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for hardness level  hardness goes from 0 - 255 (0 meaning room or corridor, 255 meaning immutable)
 room_t *rooms;
@@ -40,6 +41,7 @@ int main(int argc, char *argv[]) {
   if (load == 1)
   {
     readErr = load_dungeon(&num_rooms, &num_upstair, &num_downstair); // load from file
+    set_layout();
     create_entities(num_rooms, num_mon); 
   }
 
@@ -54,9 +56,10 @@ int main(int argc, char *argv[]) {
 
     create_rooms(&num_rooms);
     create_stairs();
+    create_paths(&num_rooms);
+    set_layout();
     create_player();
     create_entities(num_rooms, num_mon);
-    create_paths(&num_rooms);
     set_hardness();
   }
 
@@ -82,9 +85,11 @@ int main(int argc, char *argv[]) {
   // print_dist_map(dungeon_tunnel_map);
 
   entities_heap = generate_entities_heap(num_mon, entities);
-  for(int i = 0; i < 100; i++)
+  for(int i = 0; i < 1000; i++)
   {
-    next_turn(dungeon_tunnel_map, &entities_heap);
+    next_turn(dungeon_layout, dungeon_display, dungeon_hardness, entities, dungeon_tunnel_map, dungeon_non_tunnel_map, &entities_heap);
+    
+    print_dungeon(num_mon);
   }
   return 0;
 }
@@ -93,7 +98,7 @@ void create_entities(int num_rooms, int num_monsters) {
   character_t *player = malloc(sizeof(character_t)); 
   player->x_pos = pc.x_pos;
   player->y_pos = pc.y_pos;
-  player->speed = 100;
+  player->speed = 10;
   player->turn = 0;
   player->is_pc = 1;
   player->pc = &pc;
@@ -136,7 +141,20 @@ void create_entities(int num_rooms, int num_monsters) {
           character_t *monster = malloc(sizeof(character_t)); 
           monster->x_pos = x;
           monster->y_pos = y;
-          monster->speed = 10;
+	  switch (mon_type % 4) {
+	  case 0:
+	    monster->speed = 5;
+	    break;
+	  case 1:
+	    monster->speed = 10;
+	    break;
+	  case 2:
+	    monster->speed = 15;
+	    break;
+	  case 3:
+	    monster->speed = 20;
+	    break;
+	  }
           monster->turn = 0;
           monster->is_pc = 0;
           monster->npc = npc;
@@ -225,6 +243,20 @@ char get_monster_type(int n) {
       break;
   }
   return 'Z';
+}
+
+void set_layout() {
+  for (int r = 0; r < DUNGEON_ROW; r++)
+  {
+    for (int c = 0; c < DUNGEON_COL; c++)
+    {
+      if (dungeon_display[r][c] == 5) {
+	dungeon_layout[r][c] = 1;
+      } else {
+	dungeon_layout[r][c] = dungeon_display[r][c];
+      }
+    }
+  }
 }
 
 void set_hardness() { //sets any non-rock to zero hardness
