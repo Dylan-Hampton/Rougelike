@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdint.h>
 #include <endian.h>
@@ -13,6 +14,13 @@
 //Constants
 #define DUNGEON_ROW 21
 #define DUNGEON_COL 80
+#define TILE_ROCK   0
+#define TILE_FLOOR  1
+#define TILE_CORR   2
+#define TILE_DOWN   3
+#define TILE_UP     4
+#define TILE_PC     5
+#define TILE_MON    6
 #define MIN_ROOMS   6
 #define MAX_ROOMS   10
 #define BIT_SMART   0x1 
@@ -68,7 +76,7 @@ typedef struct monster_path {
 void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 heap_t generate_entities_heap(int num_mon, character_t *entities[DUNGEON_ROW][DUNGEON_COL]);
-void next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
+int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	       int dungeon_display[DUNGEON_ROW][DUNGEON_COL],
 	       uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL],
 	       character_t *entities[DUNGEON_ROW][DUNGEON_COL],

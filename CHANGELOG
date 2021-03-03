@@ -1,3 +1,4 @@
+3/03/2021 DH/BN: Added corridor creation when monster moves through rock, added monster deaths, added player lose case, refactored variable names 
 3/02/2021 DH/BN: modified entities to be based on 2d array, modified print statement, fixed heap initialization and next_turn, got telepathic monsters to move the way they are supposed to
 3/01/2021 DH/BN/CB: Added randomness to monster generation and added generate_entities_heap, started on next_turn
 2/28/2021 DH/BN: Added create_entities method and added monster generation

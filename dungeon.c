@@ -16,7 +16,7 @@ heap_t entities_heap;
 int main(int argc, char *argv[]) {
 
   srand(time(NULL));
-  int load = 0, save = 0, num_mon = 10;
+  int load = 0, save = 0, num_mon = 10, fps = 4;
   int readErr = 0, writeErr = 0, num_rooms = 0, num_upstair = 0, num_downstair = 0;
   //check for save or load switches
   if(argc > 1)
@@ -34,6 +34,10 @@ int main(int argc, char *argv[]) {
       if(!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "-m"))
       {
         num_mon = atoi(argv[++i]);
+      }
+      if(!strcmp(argv[i], "--fps") || !strcmp(argv[i], "-f"))
+      {
+	fps = atoi(argv[++i]);
       }
     }
   }
@@ -84,12 +88,22 @@ int main(int argc, char *argv[]) {
   generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
   // print_dist_map(dungeon_tunnel_map);
 
+  int pc_state = 0;
   entities_heap = generate_entities_heap(num_mon, entities);
   for(int i = 0; i < 1000; i++)
   {
-    next_turn(dungeon_layout, dungeon_display, dungeon_hardness, entities, dungeon_tunnel_map, dungeon_non_tunnel_map, &entities_heap);
-    
-    print_dungeon(num_mon);
+    pc_state = next_turn(dungeon_layout, dungeon_display, dungeon_hardness, entities, dungeon_tunnel_map, dungeon_non_tunnel_map, &entities_heap);
+
+    if(pc_state >= 0)
+    {
+      print_dungeon(num_mon);
+      usleep(1000000/fps);
+    }
+    else if(pc_state < 0)
+    {
+      printf("GAME OVER, YOU LOSE!!!");
+      break;
+    }
   }
   return 0;
 }
@@ -130,7 +144,7 @@ void create_entities(int num_rooms, int num_monsters) {
 	int mon_type = (rand() % 16);
         int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
-        if (dungeon_display[y][x] == 1 && monsters > 0)
+        if (dungeon_display[y][x] == TILE_FLOOR && monsters > 0)
         {
           dungeon_display[y][x] = 10 + mon_type;
           npc_t *npc = malloc(sizeof(npc_t));
@@ -250,8 +264,8 @@ void set_layout() {
   {
     for (int c = 0; c < DUNGEON_COL; c++)
     {
-      if (dungeon_display[r][c] == 5) {
-	dungeon_layout[r][c] = 1;
+      if (dungeon_display[r][c] == TILE_PC) {
+	dungeon_layout[r][c] = TILE_FLOOR;
       } else {
 	dungeon_layout[r][c] = dungeon_display[r][c];
       }
@@ -264,7 +278,7 @@ void set_hardness() { //sets any non-rock to zero hardness
   {
     for (int c = 0; c < DUNGEON_COL; c++)
     {
-      if (dungeon_display[r][c] != 0) {
+      if (dungeon_display[r][c] != TILE_ROCK) {
         dungeon_hardness[r][c] = 0;
       }
     }
@@ -278,9 +292,9 @@ void create_player() {
   {
     for (int x = 0; x < DUNGEON_COL; x++)
     {
-      if (dungeon_display[y][x] == 1 && player)
+      if (dungeon_display[y][x] == TILE_FLOOR && player)
       {
-        dungeon_display[y][x] = 5;
+        dungeon_display[y][x] = TILE_PC;
         dungeon_hardness[y][x] = 0;
         player = 0;
         pc.x_pos = x;
@@ -297,9 +311,9 @@ void create_stairs() {
   {
     for (int x = 0; x < DUNGEON_COL; x++)
     {
-      if (dungeon_display[y][x] == 1 && upperstair)
+      if (dungeon_display[y][x] == TILE_FLOOR && upperstair)
       {
-        dungeon_display[y + 1][x + 1] = 4;
+        dungeon_display[y + 1][x + 1] = TILE_UP;
         dungeon_hardness[y + 1][x + 1] = 0;
         upperstair = 0;
         upstairs[0].x_pos = x + 1;
@@ -314,9 +328,9 @@ void create_stairs() {
   {
     for (int x = DUNGEON_COL - 1; x >= 0; x--)
     {
-      if (dungeon_display[y][x] == 1 && lowerstair)
+      if (dungeon_display[y][x] == TILE_FLOOR && lowerstair)
       {
-        dungeon_display[y - 1][x - 1] = 3;
+        dungeon_display[y - 1][x - 1] = TILE_DOWN;
         dungeon_hardness[y - 1][x - 1] = 0;
         lowerstair = 0;
         downstairs[0].x_pos = x - 1;
@@ -351,9 +365,9 @@ void create_paths(int *num_rooms){
       }
 
       //sets rock to corridor
-      if (dungeon_display[y][x] == 0 && dungeon_display[y][x+1] != 2 && dungeon_display[y][x-1] != 2)
+      if (dungeon_display[y][x] == TILE_ROCK && dungeon_display[y][x+1] != TILE_CORR && dungeon_display[y][x-1] != TILE_CORR)
       {
-        dungeon_display[y][x] = 2;
+        dungeon_display[y][x] = TILE_CORR;
         dungeon_hardness[y][x] = 0;
       }
     }
@@ -371,10 +385,10 @@ void create_paths(int *num_rooms){
       }
 
       //sets rock to corridor
-      if (dungeon_display[y][x] == 0 && dungeon_display[y+1][x] != 2 && dungeon_display[y-1][x] != 2)
+      if (dungeon_display[y][x] == TILE_ROCK && dungeon_display[y+1][x] != TILE_CORR && dungeon_display[y-1][x] != TILE_CORR)
       {
-        dungeon_display[y][x] = 2;
-        dungeon_hardness[y][x] = 0;
+        dungeon_display[y][x] = TILE_CORR;
+        dungeon_hardness[y][x] = TILE_ROCK;
       }
     }
   }
@@ -408,8 +422,8 @@ void create_rooms(int *num_rooms){
         }
 
         //Checks each corner for overlap
-        else if(dungeon_display[y][x] != 0 || dungeon_display[y + y_dim][x] != 0 ||
-            dungeon_display[y][x+x_dim] != 0 || dungeon_display[y+y_dim][x+x_dim] != 0)
+        else if(dungeon_display[y][x] != TILE_ROCK || dungeon_display[y + y_dim][x] != TILE_ROCK ||
+            dungeon_display[y][x+x_dim] != TILE_ROCK || dungeon_display[y+y_dim][x+x_dim] != TILE_ROCK)
         {
           placement_successful = 0;
         }
@@ -421,8 +435,8 @@ void create_rooms(int *num_rooms){
           {
             for(int i = y_coord; i <= y_coord + y_dim; i++)
             {
-              if(dungeon_display[i][x_coord-1] != 0 || dungeon_display[y_coord-1][j] != 0 ||
-                  dungeon_display[(y_coord+y_dim)+1][j] != 0 || dungeon_display[i][(x_coord + x_dim)+1] != 0)
+              if(dungeon_display[i][x_coord-1] != TILE_ROCK || dungeon_display[y_coord-1][j] != TILE_ROCK ||
+                  dungeon_display[(y_coord+y_dim)+1][j] != TILE_ROCK || dungeon_display[i][(x_coord + x_dim)+1] != TILE_ROCK)
               {
                 placement_successful = 0;
               }
@@ -439,7 +453,7 @@ void create_rooms(int *num_rooms){
       {
         for(int c = x_coord; c < x_coord + x_dim; c++)
         {
-          dungeon_display[r][c] = 1;
+          dungeon_display[r][c] = TILE_FLOOR;
           dungeon_hardness[r][c] = 0;
         }
       }
@@ -466,7 +480,7 @@ void set_dungeon(){
   {
     for(int x = 0; x < DUNGEON_COL; x++)
     {
-      dungeon_display[y][x] = 0;
+      dungeon_display[y][x] = TILE_ROCK;
       dungeon_hardness[y][x] = (rand() % 254) + 1; //1-254
     }
   }
@@ -508,29 +522,30 @@ void print_dungeon(int num_mon){
     {
       switch(dungeon_display[r][c])
       {
-        case 0:
+        case TILE_ROCK:
           printf(" ");
           break;
-        case 1:
+        case TILE_FLOOR:
           printf(".");
           break;
 
-        case 2:
+        case TILE_CORR:
           printf("#");
           break;
 
-        case 3:
+        case TILE_DOWN:
           printf(">");
           break;
 
-        case 4:
+        case TILE_UP:
           printf("<");
           break;
 
-        case 5:
+        case TILE_PC:
           printf("@");
           break;
 
+	  //Monster 10-25 (n - 10 for type)
         case 10:
         case 11:
         case 12:

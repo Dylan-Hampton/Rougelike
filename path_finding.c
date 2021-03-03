@@ -42,7 +42,7 @@ nontunneling is nontunnelting map distances to player
 
  */
 //Moves least turn character
-void next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
+int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	       int dungeon_display[DUNGEON_ROW][DUNGEON_COL],
 	       uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL],
 	       character_t *entities[DUNGEON_ROW][DUNGEON_COL],
@@ -51,70 +51,121 @@ void next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	       heap_t *h)
 {
   character_t *c = heap_remove_min(h);
-  printf("Speed: %d  Turn: %d\n  x: %d  y: %d\n", c->speed, c->turn, c->x_pos, c->y_pos);
   c->turn += (1000 / c->speed);
-  int smart = 0;
-  int tele = 0;
-  int tun = 0;
-  int erat = 0;
-  int map[DUNGEON_ROW][DUNGEON_COL];
-  for (int r = 0; r < DUNGEON_ROW; r++) {
-    for (int c = 0; c < DUNGEON_COL; c++) {
-      map[r][c] = nontunnel[r][c];
-    }
-  }
-  if (!c->is_pc && c->npc->characteristics & BIT_SMART) {
-    smart = 1;
-  }
-  if (!c->is_pc && c->npc->characteristics & BIT_TELE) {
-    tele = 1;
-  }
-  if (!c->is_pc && c->npc->characteristics & BIT_TUN) {
-    tun = 1;
-  }
-  if (!c->is_pc && c->npc->characteristics & BIT_ERAT) {
-    erat = 1;
-  }
-  if (smart) {
-    //use line of sight and remembers where it last saw them
-  }
-  if (tun) {
-    for (int r = 0; r < DUNGEON_ROW; r++) {
-      for (int c = 0; c < DUNGEON_COL; c++) {
-        map[r][c] = tunnel[r][c];
-      }
-    }
-  }
-  if (erat) {
-    //50% chance for random movement
-  }
-  
-  //update character position
-
-  if (tele) {
-    int min = INT_MAX;
-    int min_y;
-    int min_x;
-    for (int i = -1; i <= 1; i++) {
-      for (int j = -1; j <= 1; j++) {
-	if (map[c->y_pos + i][c->x_pos + j] < min) {
-	  min = map[c->y_pos + i][c->x_pos + j];
-	  min_y = c->y_pos + i;
-	  min_x = c->x_pos + j;
+  if(c->is_alive == 1)
+    {
+      //printf("Speed: %d  Turn: %d\n  x: %d  y: %d\n", c->speed, c->turn, c->x_pos, c->y_pos);
+      int smart = 0;
+      int tele = 0;
+      int tun = 0;
+      int erat = 0;
+      //initializing map 
+      int map[DUNGEON_ROW][DUNGEON_COL];
+      for (int r = 0; r < DUNGEON_ROW; r++) {
+	for (int c = 0; c < DUNGEON_COL; c++) {
+	  map[r][c] = nontunnel[r][c];
 	}
       }
-    }
-    if (entities[min_y][min_x] != NULL) {
-      entities[min_y][min_x]->is_alive = 0;
-    }
-    dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
-    dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];
-    c->y_pos = min_y;
-    c->x_pos = min_x;
+      //setting characteristics
+      if (!c->is_pc && c->npc->characteristics & BIT_SMART) {
+	smart = 1;
+      } if (!c->is_pc && c->npc->characteristics & BIT_TELE) {
+	tele = 1;
+      } if (!c->is_pc && c->npc->characteristics & BIT_TUN) {
+	tun = 1;
+      } if (!c->is_pc && c->npc->characteristics & BIT_ERAT) {
+	erat = 1;
+      }
+
+      if (tun) {
+	for (int r = 0; r < DUNGEON_ROW; r++) {
+	   for (int c = 0; c < DUNGEON_COL; c++) {
+	    map[r][c] = tunnel[r][c];
+	  }
+        }
+      }
+      
+      if(erat && (rand() % 2 == 0))
+      {
+	
+      }
+      else
+      {
+	if (smart) {
+	  //use line of sight and remembers where it last saw them
+	}
+	//set map to tunneling if tun is true  
+	//update character position
+
+	if (tele) {
+	  int min = INT_MAX;
+	  int min_y;
+	  int min_x;
+	  //finding min move
+	  for (int i = -1; i <= 1; i++) {
+	    for (int j = -1; j <= 1; j++) {
+	      if(c->y_pos + i >= 0 && c->y_pos + i < DUNGEON_ROW && c->x_pos + j >= 0 && c->x_pos + j < DUNGEON_COL) {
+	        if (map[c->y_pos + i][c->x_pos + j] < min) {
+		  min = map[c->y_pos + i][c->x_pos + j];
+		  min_y = c->y_pos + i;
+		  min_x = c->x_pos + j;
+		}
+	      }
+	    }
+	  }
+	  //killing any monsters standing on next tile
+	  if (entities[min_y][min_x] != NULL) {
+	    entities[min_y][min_x]->is_alive = 0;
+	    dungeon_display[min_y][min_x] = dungeon_layout[min_y][min_x];
+	    
+	    if(entities[min_y][min_x]->is_pc)
+	    {
+	      return -1;
+	    }
+	  }	  
+      
+	  //moving monster to next tile and replacing current display tile r,c with underneath tile
+	  //if monster breaks rock and moves
+	  if(dungeon_display[min_y][min_x] == TILE_ROCK && (dungeon_hardness[min_y][min_x] - 85) < 0)
+	  {
+	    dungeon_hardness[min_y][min_x] = 0;
+	    dungeon_layout[min_y][min_x] = TILE_CORR;
+
+	    dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
+	    dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];
+	    c->y_pos = min_y;
+	    c->x_pos = min_x;
+	  } //monster digs, may or may not break rock, but doesn't move to corridor
+	  else if(dungeon_display[min_y][min_x] == TILE_ROCK && (dungeon_hardness[min_y][min_x] - 85) >= 0)
+	  {
+	    dungeon_hardness[min_y][min_x] -= 85;
+	    if(dungeon_hardness[min_y][min_x] == 0)
+	    {
+	      dungeon_layout[min_y][min_x] = TILE_CORR;
+	    }
+	  } //if moving to already room / corridor / stairs
+	  else if(dungeon_hardness[min_y][min_x] == 0)
+	  {
+	    dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
+	    dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];
+	    c->y_pos = min_y;
+	    c->x_pos = min_x;
+	  }
+	  else
+	  {
+	    printf("ERROR");
+	  }
+	}
+      }                
   }
 
   heap_insert(h, c);
-  //heapify
+  
+  if(c->is_pc)
+  {
+    return 1;
+  }
+  return 0;
 }
 
 //Most of this code is borrowed from Sheaffer
