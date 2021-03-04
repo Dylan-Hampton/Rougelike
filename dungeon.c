@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
   int load = 0, save = 0, num_mon = 10, fps = 4;
   int readErr = 0, writeErr = 0, num_rooms = 0, num_upstair = 0, num_downstair = 0;
-  
+
   //check for save or load switches
   if(argc > 1)
   {
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
       }
       if(!strcmp(argv[i], "--fps") || !strcmp(argv[i], "-f"))
       {
-	fps = atoi(argv[++i]);
+        fps = atoi(argv[++i]);
       }
     }
   }
@@ -95,12 +95,12 @@ int main(int argc, char *argv[]) {
     /**
       moves next entity from queue from heap (besed on lowest turn), returns pc state
       (0 == (monster turn) alive, -1 == player died, 1 == player turn (alive)) 
-    **/
+     **/
     pc_state = next_turn(dungeon_layout, dungeon_display,
-			 dungeon_hardness, entities, dungeon_tunnel_map,
-			 dungeon_non_tunnel_map, &entities_heap, (num_mon + 1));
+        dungeon_hardness, entities, dungeon_tunnel_map,
+        dungeon_non_tunnel_map, &entities_heap, (num_mon + 1));
 
-    if(pc_state >= 0)
+    if(pc_state > 0)
     {
       print_dungeon();
       usleep(1000000/fps);
@@ -165,7 +165,7 @@ void create_entities(int num_rooms, int *num_monsters) {
     {
       if (room != player_room)
       {
-	int mon_type = (rand() % 16);
+        int mon_type = (rand() % 16);
         int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
         if (dungeon_display[y][x] == TILE_FLOOR && *num_monsters > 0)
@@ -179,26 +179,26 @@ void create_entities(int num_rooms, int *num_monsters) {
           character_t *monster = malloc(sizeof(character_t)); 
           monster->x_pos = x;
           monster->y_pos = y;
-	  switch (mon_type % 4) {
-	  case 0:
-	    monster->speed = 5;
-	    break;
-	  case 1:
-	    monster->speed = 10;
-	    break;
-	  case 2:
-	    monster->speed = 15;
-	    break;
-	  case 3:
-	    monster->speed = 20;
-	    break;
-	  }
+          switch (mon_type % 4) {
+            case 0:
+              monster->speed = 5;
+              break;
+            case 1:
+              monster->speed = 10;
+              break;
+            case 2:
+              monster->speed = 15;
+              break;
+            case 3:
+              monster->speed = 20;
+              break;
+          }
           monster->turn = 0;
           monster->is_pc = 0;
           monster->npc = npc;
           monster->is_alive = 1;
           entities[y][x] = monster;
-	  spawned_mon++;
+          spawned_mon++;
           (*num_monsters)--;
         }
       }
@@ -208,27 +208,27 @@ void create_entities(int num_rooms, int *num_monsters) {
 
   *num_monsters = spawned_mon;
   /*
-  for (int r = 0; r < DUNGEON_ROW; r++)
-  {
-    for(int c = 0; c < DUNGEON_COL; c++)
-    {
-      if(entities[r][c] != NULL)
-      {
-        printf("x: %d y: %d\n", entities[r][c]->x_pos, entities[r][c]->y_pos);
-	printf("speed: %d\n", entities[r][c]->speed);
-	printf("is_pc: %d\n", entities[r][c]->is_pc);
-	//printf("turn: %d\n", entities[r][c]->turn);
-	printf("is_alive: %d\n", entities[r][c]->is_alive);
-      }
-      else if (entities[r][c] == NULL){
-	printf("NULL -> %d, %d\n", r, c);
-      }
-      else {
-	printf("ERROR\n");
-	}
-    }
+     for (int r = 0; r < DUNGEON_ROW; r++)
+     {
+     for(int c = 0; c < DUNGEON_COL; c++)
+     {
+     if(entities[r][c] != NULL)
+     {
+     printf("x: %d y: %d\n", entities[r][c]->x_pos, entities[r][c]->y_pos);
+     printf("speed: %d\n", entities[r][c]->speed);
+     printf("is_pc: %d\n", entities[r][c]->is_pc);
+  //printf("turn: %d\n", entities[r][c]->turn);
+  printf("is_alive: %d\n", entities[r][c]->is_alive);
   }
-*/
+  else if (entities[r][c] == NULL){
+  printf("NULL -> %d, %d\n", r, c);
+  }
+  else {
+  printf("ERROR\n");
+  }
+  }
+  }
+   */
 }
 
 char get_monster_type(int n) {
@@ -292,9 +292,9 @@ void set_layout() {
     for (int c = 0; c < DUNGEON_COL; c++)
     {
       if (dungeon_display[r][c] == TILE_PC) {
-	dungeon_layout[r][c] = TILE_FLOOR;
+        dungeon_layout[r][c] = TILE_FLOOR;
       } else {
-	dungeon_layout[r][c] = dungeon_display[r][c];
+        dungeon_layout[r][c] = dungeon_display[r][c];
       }
     }
   }
@@ -572,7 +572,7 @@ void print_dungeon(){
           printf("@");
           break;
 
-	  //Monster 10-25 (n - 10 for type)
+          //Monster 10-25 (n - 10 for type)
         case 10:
         case 11:
         case 12:

@@ -53,7 +53,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
   int pc_alive = 1;
   character_t *c = heap_remove_min(h);
   c->turn += (1000 / c->speed);
-  if(c->is_alive == 1)
+  if(c->is_alive == 1 && !(c->is_pc))
   {
     //printf("Speed: %d  Turn: %d\n  x: %d  y: %d\n", c->speed, c->turn, c->x_pos, c->y_pos);
     int smart = 0;
@@ -88,111 +88,148 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
       }
     }
 
-    //eratic monsters will move randomly half of the time, otherwise moves 
-    //based on other charactersitics
-    if(erat && (rand() % 2 == 0))
-    {
-      //TODO
+    //use line of sight and remembers where it last saw them
+    //if (smart) {
+    //TODO
+    //}
+
+    //update character position
+    int move = 0;
+    int min = INT_MAX;
+    int min_y;
+    int min_x;
+    //finding move that takes fastest path to pc from map
+    if (tele || smart) {
+      for (int i = -1; i <= 1; i++) {
+	for (int j = -1; j <= 1; j++) {
+	  if(c->y_pos + i >= 0
+	     && c->y_pos + i < DUNGEON_ROW
+	     && c->x_pos + j >= 0 
+	     && c->x_pos + j < DUNGEON_COL) {
+	    if (map[c->y_pos + i][c->x_pos + j] < min) {
+	      min = map[c->y_pos + i][c->x_pos + j];
+	      min_y = c->y_pos + i;
+	      min_x = c->x_pos + j;
+	    }
+	  }
+	}
+      }
+    } else if (tun){
+      for (int attempts = 0; attempts < 1000; attempts++) {
+	min_y = c->y_pos + (rand() % 3) - 1;
+	min_x = c->x_pos + (rand() % 3) - 1;
+	if (!(min_x == c->x_pos && min_y == c->y_pos)) {
+	  if(min_y >= 0
+	     && min_y < DUNGEON_ROW
+	     && min_x >= 0 
+	     && min_x < DUNGEON_COL) {
+	    attempts = 1000;
+	  }
+	}
+      }
     }
     else
     {
-      //use line of sight and remembers where it last saw them
-      if (smart) {
-        //TODO
+      for (int attempts = 0; attempts < 1000; attempts++) {
+	min_y = c->y_pos + (rand() % 3) - 1;
+	min_x = c->x_pos + (rand() % 3) - 1;
+	if (dungeon_hardness[min_y][min_x] == 0 && !(min_x == c->x_pos && min_y == c->y_pos)) {
+	  if(min_y >= 0
+	     && min_y < DUNGEON_ROW
+	     && min_x >= 0 
+	     && min_x < DUNGEON_COL) {
+	    attempts = 1000;
+	  }
+	}
       }
+    }
 
-      //update character position
-      if (tele) { // should have only smart ones doing it
-        int move = 0;
-        int min = INT_MAX;
-        int min_y;
-        int min_x;
-        //finding move that takes fastest path to pc from map
-        for (int i = -1; i <= 1; i++) {
-          for (int j = -1; j <= 1; j++) {
-            if(c->y_pos + i >= 0
-                && c->y_pos + i < DUNGEON_ROW
-                && c->x_pos + j >= 0 
-                && c->x_pos + j < DUNGEON_COL) {
-              if (map[c->y_pos + i][c->x_pos + j] < min) {
-                min = map[c->y_pos + i][c->x_pos + j];
-                min_y = c->y_pos + i;
-                min_x = c->x_pos + j;
-              }
+    //eratic monsters will move randomly half of the time, otherwise moves 
+    //based on other charactersitics
+    if(erat && (rand() % 2 == 0))
+      {    
+        for (int attempts = 0; attempts < 1000; attempts++) {
+          min_y = c->y_pos + (rand() % 3) - 1;
+          min_x = c->x_pos + (rand() % 3) - 1;
+          if (dungeon_hardness[min_y][min_x] == 0 && !(min_x == c->x_pos && min_y == c->y_pos)) {
+            if(min_y >= 0
+	       && min_y < DUNGEON_ROW
+	       && min_x >= 0 
+	       && min_x < DUNGEON_COL) {
+              attempts = 1000;
             }
           }
         }
-
-        //moving monster to next tile and replacing current display tile r,c with underneath tile
-
-        //killing any monsters standing on next tile
-        if(entities[min_y][min_x] != NULL)
-        {
-          character_t *temp[num_ent - 1];
-          //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
-          for(int i = 0; i < num_ent - 1; i++)
-          {
-            temp[i] = heap_remove_min(h);	  
-
-            if(temp[i]->x_pos == min_x && temp[i]->y_pos == min_y)
-            {
-              temp[i]->is_alive = 0;
-            }
-          } //reinserts temp into heap
-          for(int i = 0; i < num_ent - 1; i++)
-          {
-            heap_insert(h, temp[i]);
-          }
-
-          dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
-          dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];	 
-          move = 1;
-
-          if(entities[min_y][min_x]->is_pc)
-          {
-            pc_alive = 0;
-          }
-        } //if monster breaks rock and moves
-        else if(dungeon_display[min_y][min_x] == TILE_ROCK 
-            && (dungeon_hardness[min_y][min_x] - 85) < 0)
-        {
-          dungeon_hardness[min_y][min_x] = 0;
-          dungeon_layout[min_y][min_x] = TILE_CORR;
-
-          dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
-          dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];
-          move = 1;
-        } //monster digs, may or may not break rock, but doesn't move to corridor
-        else if(dungeon_display[min_y][min_x] == TILE_ROCK 
-            && (dungeon_hardness[min_y][min_x] - 85) >= 0)
-        {
-          dungeon_hardness[min_y][min_x] -= 85;
-          if(dungeon_hardness[min_y][min_x] == 0)
-          {
-            dungeon_layout[min_y][min_x] = TILE_CORR;
-          }
-        } //if moving to already room / corridor / stairs
-        else if(dungeon_hardness[min_y][min_x] == 0)
-        {
-          dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
-          dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];
-          move = 1;
-        }	
-        else
-        {
-          printf("ERROR");
-        }
-        //moves character to next position, and updates entities array
-        if(move)
-        {
-          entities[min_y][min_x] = c;
-          entities[c->y_pos][c->x_pos] = NULL;
-          c->y_pos = min_y;
-          c->x_pos = min_x;
-        }
       }
-    }                
-  }
+    //printf("x: %d y: %d",min_x,min_y);
+    //moving monster to next tile and replacing current display tile r,c with underneath tile
+
+    //killing any monsters standing on next tile
+    if(entities[min_y][min_x] != NULL)
+      {
+        character_t *temp[num_ent - 1];
+        //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
+        for(int i = 0; i < num_ent - 1; i++)
+	  {
+	    temp[i] = heap_remove_min(h);	  
+
+	    if(temp[i]->x_pos == min_x && temp[i]->y_pos == min_y)
+	      {
+		temp[i]->is_alive = 0;
+	      }
+	  } //reinserts temp into heap
+        for(int i = 0; i < num_ent - 1; i++)
+	  {
+	    heap_insert(h, temp[i]);
+	  }
+
+        dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
+        dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];	 
+        move = 1;
+
+        if(entities[min_y][min_x]->is_pc)
+	  {
+	    pc_alive = 0;
+	  }
+      } //if monster breaks rock and moves
+    else if(dungeon_display[min_y][min_x] == TILE_ROCK 
+	    && (dungeon_hardness[min_y][min_x] - 85) < 0)
+      {
+        dungeon_hardness[min_y][min_x] = 0;
+        dungeon_layout[min_y][min_x] = TILE_CORR;
+
+        dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
+        dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];
+        move = 1;
+      } //monster digs, may or may not break rock, but doesn't move to corridor
+    else if(dungeon_display[min_y][min_x] == TILE_ROCK 
+	    && (dungeon_hardness[min_y][min_x] - 85) >= 0)
+      {
+        dungeon_hardness[min_y][min_x] -= 85;
+        if(dungeon_hardness[min_y][min_x] == 0)
+	  {
+	    dungeon_layout[min_y][min_x] = TILE_CORR;
+	  }
+      } //if moving to already room / corridor / stairs
+    else if(dungeon_hardness[min_y][min_x] == 0)
+      {
+        dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
+        dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];
+        move = 1;
+      }	
+    else
+      {
+        printf("ERROR");
+      }
+    //moves character to next position, and updates entities array
+    if(move)
+      {
+        entities[min_y][min_x] = c;
+        entities[c->y_pos][c->x_pos] = NULL;
+        c->y_pos = min_y;
+        c->x_pos = min_x;
+      }
+  }           
 
   heap_insert(h, c);
 
