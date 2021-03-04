@@ -42,13 +42,14 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  //load from file
   if (load == 1)
   {
     readErr = load_dungeon(&num_rooms, &num_upstair, &num_downstair); // load from file
     set_layout();
     create_entities(num_rooms, &num_mon); 
   }
-
+  //create our own dungeon
   else
   {
     set_dungeon();
@@ -66,7 +67,7 @@ int main(int argc, char *argv[]) {
     create_entities(num_rooms, &num_mon);
     set_hardness();
   }
-
+  //save to file
   if (save == 1)
   { 
     writeErr = save_dungeon(&num_rooms, &num_upstair, &num_downstair); // save dungeon to file
@@ -133,6 +134,7 @@ int main(int argc, char *argv[]) {
 }
 
 void create_entities(int num_rooms, int *num_monsters) {
+  //intializing player and placing into entities
   character_t *player = malloc(sizeof(character_t)); 
   player->x_pos = pc.x_pos;
   player->y_pos = pc.y_pos;
@@ -142,6 +144,7 @@ void create_entities(int num_rooms, int *num_monsters) {
   player->pc = &pc;
   player->is_alive = 1;
   entities[pc.y_pos][pc.x_pos] = player;
+  //finds which room the player is in so no monster spawn there
   int player_room = 0;
   for (int room = 0; room < num_rooms; room++)
   {
@@ -157,6 +160,7 @@ void create_entities(int num_rooms, int *num_monsters) {
     }
   }
 
+  //places num_monsters randomly within the rooms (if no more space is available none are placed)
   int attempts = 0;
   int spawned_mon = 0;
   while (*num_monsters > 0 && attempts < 1000)
@@ -170,6 +174,7 @@ void create_entities(int num_rooms, int *num_monsters) {
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
         if (dungeon_display[y][x] == TILE_FLOOR && *num_monsters > 0)
         {
+	  //initializing monster
           dungeon_display[y][x] = 10 + mon_type;
           npc_t *npc = malloc(sizeof(npc_t));
           npc->x_pos = x;
@@ -207,30 +212,9 @@ void create_entities(int num_rooms, int *num_monsters) {
   }
 
   *num_monsters = spawned_mon;
-  /*
-     for (int r = 0; r < DUNGEON_ROW; r++)
-     {
-     for(int c = 0; c < DUNGEON_COL; c++)
-     {
-     if(entities[r][c] != NULL)
-     {
-     printf("x: %d y: %d\n", entities[r][c]->x_pos, entities[r][c]->y_pos);
-     printf("speed: %d\n", entities[r][c]->speed);
-     printf("is_pc: %d\n", entities[r][c]->is_pc);
-  //printf("turn: %d\n", entities[r][c]->turn);
-  printf("is_alive: %d\n", entities[r][c]->is_alive);
-  }
-  else if (entities[r][c] == NULL){
-  printf("NULL -> %d, %d\n", r, c);
-  }
-  else {
-  printf("ERROR\n");
-  }
-  }
-  }
-   */
 }
 
+//returns respective monster character based on number
 char get_monster_type(int n) {
   switch(n)
   {
@@ -572,7 +556,7 @@ void print_dungeon(){
           printf("@");
           break;
 
-          //Monster 10-25 (n - 10 for type)
+        //Monster 10-25 (n - 10 for type)
         case 10:
         case 11:
         case 12:

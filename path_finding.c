@@ -50,6 +50,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
     int nontunnel[DUNGEON_ROW][DUNGEON_COL],
     heap_t *h, int num_ent)
 {
+  //removing minimum turn character and updating turn, if monster then moves based on given characteristics
   int pc_alive = 1;
   character_t *c = heap_remove_min(h);
   c->turn += (1000 / c->speed);
@@ -114,7 +115,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	  }
 	}
       }
-    } else if (tun){
+    } else if (tun){ //moves randomly for tunneler
       for (int attempts = 0; attempts < 1000; attempts++) {
 	min_y = c->y_pos + (rand() % 3) - 1;
 	min_x = c->x_pos + (rand() % 3) - 1;
@@ -128,8 +129,8 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	}
       }
     }
-    else
-    {
+    else //moves randomly for non-tunneler
+    { 
       for (int attempts = 0; attempts < 1000; attempts++) {
 	min_y = c->y_pos + (rand() % 3) - 1;
 	min_x = c->x_pos + (rand() % 3) - 1;
@@ -144,7 +145,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
       }
     }
 
-    //eratic monsters will move randomly half of the time, otherwise moves 
+    //eratic monsters will move randomly half of the time (overrides any other characteristic movement), otherwise moves 
     //based on other charactersitics
     if(erat && (rand() % 2 == 0))
       {    
