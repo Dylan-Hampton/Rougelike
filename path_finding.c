@@ -109,12 +109,12 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	for (int j = -1; j <= 1; j++) {
 	  if(c->y_pos + i >= 0
 	     && c->y_pos + i < DUNGEON_ROW
-	     && c->x_pos + j >= 0 
-	     && c->x_pos + j < DUNGEON_COL) {
-	    if (map[c->y_pos + i][c->x_pos + j] < min) {
-	      min = map[c->y_pos + i][c->x_pos + j];
+	     /* && c->x_pos + j >= 0 
+		&& c->x_pos + j < DUNGEON_COL */) {
+	    if (map[c->y_pos + i][(c->x_pos + j) % DUNGEON_COL] < min) {
+	      min = map[c->y_pos + i][(c->x_pos + j) % DUNGEON_COL];
 	      min_y = c->y_pos + i;
-	      min_x = c->x_pos + j;
+	      min_x = (c->x_pos + j) % DUNGEON_COL;
 	    }
 	  }
 	}
