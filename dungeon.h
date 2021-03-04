@@ -49,6 +49,7 @@ typedef struct npc {
 } npc_t;
 
 typedef struct character {
+  int sn;
   int x_pos;
   int y_pos;
   int speed;

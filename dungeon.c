@@ -134,8 +134,10 @@ int main(int argc, char *argv[]) {
 }
 
 void create_entities(int num_rooms, int *num_monsters) {
+  int seq = 0;
   //intializing player and placing into entities
-  character_t *player = malloc(sizeof(character_t)); 
+  character_t *player = malloc(sizeof(character_t));
+  player->sn = seq++;
   player->x_pos = pc.x_pos;
   player->y_pos = pc.y_pos;
   player->speed = 10;
@@ -181,7 +183,8 @@ void create_entities(int num_rooms, int *num_monsters) {
           npc->y_pos = y;
           npc->characteristics = mon_type;
           npc->type = get_monster_type(mon_type);
-          character_t *monster = malloc(sizeof(character_t)); 
+          character_t *monster = malloc(sizeof(character_t));
+	  monster->sn = seq++;
           monster->x_pos = x;
           monster->y_pos = y;
           switch (mon_type % 4) {

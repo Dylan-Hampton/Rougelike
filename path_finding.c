@@ -13,6 +13,10 @@ static int32_t monster_path_cmp(const void *key, const void *with) {
 }
 
 static int32_t character_move_cmp(const void *key, const void *with) {
+  if(((character_t *) key)->turn == ((character_t *) with)->turn)
+  {
+    return ((character_t *) key)->sn - ((character_t *) with)->sn;
+  }
   return ((character_t *) key)->turn - ((character_t *) with)->turn;
 }
 
