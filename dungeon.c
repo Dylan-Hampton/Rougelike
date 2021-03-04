@@ -97,6 +97,15 @@ int main(int argc, char *argv[]) {
       moves next entity from queue from heap (besed on lowest turn), returns pc state
       (0 == (monster turn) alive, -1 == player died, 1 == player turn (alive)) 
      **/
+    /* prints the tunneling map for debugging
+    for (int r = 0; r < DUNGEON_ROW; r++) {
+      for (int c = 0; c < DUNGEON_COL; c++) {
+        printf("%2d", dungeon_tunnel_map[r][c]);
+      }
+      printf("\n");
+    }
+    printf("\n\n");
+    */
     pc_state = next_turn(dungeon_layout, dungeon_display,
         dungeon_hardness, entities, dungeon_tunnel_map,
         dungeon_non_tunnel_map, &entities_heap, (num_mon + 1));
