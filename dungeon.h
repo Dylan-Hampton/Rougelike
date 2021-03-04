@@ -82,7 +82,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	       character_t *entities[DUNGEON_ROW][DUNGEON_COL],
 	       int tunnel[DUNGEON_ROW][DUNGEON_COL],
 	       int nontunnel[DUNGEON_ROW][DUNGEON_COL],
-	       heap_t *h);
+	      heap_t *h, int num_ent);
 
 //dungeon.c
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
@@ -96,7 +96,7 @@ void create_player(); //Creates the player and places them in the highest room c
 void set_hardness(); //sets the hardness of the rocks in the dungeon
 int save_dungeon(); //Saves dungeon in binary file in the .../.rlg327/dungeon  folder
 int load_dungeon(); //Reads dungeon from binary file in the .../.rlg327/dungeon  folder
-void create_entities(int num_rooms, int num_monsters); // creates the monsters and player
+void create_entities(int num_rooms, int *num_monsters); // creates the monsters and player
 char get_monster_type(int n); // gets monster type based on number n
 
 #endif

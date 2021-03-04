@@ -14,10 +14,10 @@ character_t *entities[DUNGEON_ROW][DUNGEON_COL];
 heap_t entities_heap;
 
 int main(int argc, char *argv[]) {
-
   srand(time(NULL));
   int load = 0, save = 0, num_mon = 10, fps = 4;
   int readErr = 0, writeErr = 0, num_rooms = 0, num_upstair = 0, num_downstair = 0;
+  
   //check for save or load switches
   if(argc > 1)
   {
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   {
     readErr = load_dungeon(&num_rooms, &num_upstair, &num_downstair); // load from file
     set_layout();
-    create_entities(num_rooms, num_mon); 
+    create_entities(num_rooms, &num_mon); 
   }
 
   else
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     create_paths(&num_rooms);
     set_layout();
     create_player();
-    create_entities(num_rooms, num_mon);
+    create_entities(num_rooms, &num_mon);
     set_hardness();
   }
 
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   }
 
   // print dungeon_display
-  print_dungeon(num_mon);
+  print_dungeon();
   // printf("\n");
   // making dist maps and printing them
   // non tunneling
@@ -90,25 +90,49 @@ int main(int argc, char *argv[]) {
 
   int pc_state = 0;
   entities_heap = generate_entities_heap(num_mon, entities);
-  for(int i = 0; i < 1000; i++)
+  while(1)
   {
-    pc_state = next_turn(dungeon_layout, dungeon_display, dungeon_hardness, entities, dungeon_tunnel_map, dungeon_non_tunnel_map, &entities_heap);
+    /**
+      moves next entity from queue from heap (besed on lowest turn), returns pc state
+      (0 == (monster turn) alive, -1 == player died, 1 == player turn (alive)) 
+    **/
+    pc_state = next_turn(dungeon_layout, dungeon_display,
+			 dungeon_hardness, entities, dungeon_tunnel_map,
+			 dungeon_non_tunnel_map, &entities_heap, (num_mon + 1));
 
     if(pc_state >= 0)
     {
-      print_dungeon(num_mon);
+      print_dungeon();
       usleep(1000000/fps);
     }
     else if(pc_state < 0)
     {
-      printf("GAME OVER, YOU LOSE!!!");
+      print_dungeon();
+      printf("                            ,-.\n");
+      printf("       ___,---.__          /'|`\\          __,---,___\n");
+      printf("    ,-'    \\`    `-.____,-'  |  `-.____,-'    //    `-.\n");
+      printf("  ,'        |           ~'\\     /`~           |        `.\n");
+      printf(" /      ___//              `. ,'          ,  , \\___      \\\n");
+      printf("|    ,-'   `-.__   _         |        ,    __,-'   `-.    |\n");
+      printf("|   /          /\\_  `   .    |    ,      _/\\          \\   |\n");
+      printf("\\  |           \\ \\`-.___ \\   |   / ___,-'/ /           |  /\n");
+      printf(" \\  \\           | `._   `\\\\  |  //'   _,' |           /  /\n");
+      printf("  `-.\\         /'  _ `---'' , . ``---' _  `\\         /,-'\n");
+      printf("     ``       /     \\    ,='/ \\`=.    /     \\       ''\n");
+      printf("             |__   /|\\_,--.,-.--,--._/|\\   __|\n");
+      printf("             /  `./  \\\\`\\ |  |  | /,//' \\,'  \\\n");
+      printf("            /   /     ||--+--|--+-/-|     \\   \\\n");
+      printf("           |   |     /'\\_\\_\\ | /_/_/`\\     |   |\n");
+      printf("            \\   \\__, \\_     `~'     _/ .__/   /\n");
+      printf("             `-._,-'   `-._______,-'   `-._,-'\n");
+      printf("\n                       MONSTERS WIN!\n");
       break;
     }
   }
   return 0;
 }
 
-void create_entities(int num_rooms, int num_monsters) {
+void create_entities(int num_rooms, int *num_monsters) {
   character_t *player = malloc(sizeof(character_t)); 
   player->x_pos = pc.x_pos;
   player->y_pos = pc.y_pos;
@@ -134,8 +158,8 @@ void create_entities(int num_rooms, int num_monsters) {
   }
 
   int attempts = 0;
-  int monsters = num_monsters;
-  while (monsters > 0 && attempts < 1000)
+  int spawned_mon = 0;
+  while (*num_monsters > 0 && attempts < 1000)
   {
     for (int room = 0; room < num_rooms; room++)
     {
@@ -144,7 +168,7 @@ void create_entities(int num_rooms, int num_monsters) {
 	int mon_type = (rand() % 16);
         int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
-        if (dungeon_display[y][x] == TILE_FLOOR && monsters > 0)
+        if (dungeon_display[y][x] == TILE_FLOOR && *num_monsters > 0)
         {
           dungeon_display[y][x] = 10 + mon_type;
           npc_t *npc = malloc(sizeof(npc_t));
@@ -174,12 +198,15 @@ void create_entities(int num_rooms, int num_monsters) {
           monster->npc = npc;
           monster->is_alive = 1;
           entities[y][x] = monster;
-          monsters--;
+	  spawned_mon++;
+          (*num_monsters)--;
         }
       }
     }
     attempts++;
   }
+
+  *num_monsters = spawned_mon;
   /*
   for (int r = 0; r < DUNGEON_ROW; r++)
   {
@@ -514,7 +541,7 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 // 4 == upstairs('<')
 // 5 == player character('@')
 // 6 == monster('type')
-void print_dungeon(int num_mon){
+void print_dungeon(){
 
   for(int r = 0; r < DUNGEON_ROW; r++)
   {
