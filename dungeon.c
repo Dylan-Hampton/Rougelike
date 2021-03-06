@@ -12,11 +12,13 @@ stair_t *upstairs;
 stair_t *downstairs;
 character_t *entities[DUNGEON_ROW][DUNGEON_COL];
 heap_t entities_heap;
+int num_entities;
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
   int load = 0, save = 0, num_mon = 10;//, fps = 4;
   int readErr = 0, writeErr = 0, num_rooms = 0, num_upstair = 0, num_downstair = 0;
+  char player_next_move;
 
   //check for save or load switches
   if(argc > 1)
@@ -36,11 +38,11 @@ int main(int argc, char *argv[]) {
         num_mon = atoi(argv[++i]);
       }
       /*
-      if(!strcmp(argv[i], "--fps") || !strcmp(argv[i], "-f"))
-      {
-        fps = atoi(argv[++i]);
-      }
-      */
+         if(!strcmp(argv[i], "--fps") || !strcmp(argv[i], "-f"))
+         {
+         fps = atoi(argv[++i]);
+         }
+       */
     }
   }
 
@@ -59,7 +61,7 @@ int main(int argc, char *argv[]) {
     rooms = malloc(MIN_ROOMS * sizeof(room_t));
     num_upstair = 1;
     num_downstair = 1;
-
+    num_entities = num_mon + 1;
     spawn_new_dungeon(num_rooms, num_mon);
   }
   //save to file
@@ -92,15 +94,17 @@ int main(int argc, char *argv[]) {
       moves next entity from queue from heap (besed on lowest turn), returns pc state
       (0 == (monster turn) alive, -1 == player died, 1 == player turn (alive)) 
      **/
-    /* prints the tunneling map for debugging
-    for (int r = 0; r < DUNGEON_ROW; r++) {
-      for (int c = 0; c < DUNGEON_COL; c++) {
-        printf("%2d", dungeon_tunnel_map[r][c]);
-      }
-      printf("\n");
-    }
-    printf("\n\n");
-    */
+    // prints the tunneling map for debugging
+//       for (int r = 0; r < DUNGEON_ROW; r++) {
+ //      for (int c = 0; c < DUNGEON_COL; c++) {
+  //     printf("%2d", dungeon_tunnel_map[r][c]);
+   //    }
+    //   printf("\n");
+     //  }
+      // printf("\n\n");
+     
+    generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
+    generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
     pc_state = next_turn(dungeon_layout, dungeon_display,
         dungeon_hardness, entities, dungeon_tunnel_map,
         dungeon_non_tunnel_map, &entities_heap, (num_mon + 1));
@@ -108,10 +112,13 @@ int main(int argc, char *argv[]) {
     if(pc_state > 0)
     {
       print_dungeon();
+      player_next_move = getch();
+      move_player(player_next_move);
     }
     else if(pc_state < 0)
     {
-      print_dungeon();
+      endwin();
+      print_dungeon_terminal();
       printf("                            ,-.\n");
       printf("       ___,---.__          /'|`\\          __,---,___\n");
       printf("    ,-'    \\`    `-.____,-'  |  `-.____,-'    //    `-.\n");
@@ -136,17 +143,104 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+// moves the player
+int move_player(char direction) {
+  int x_direction = 0;
+  int y_direction = 0;
+  switch (direction) {
+    case '1':// down left
+    case 'b':
+      x_direction = -1;
+      y_direction = 1;
+      break;
+    case '2':// down
+    case 'j':
+      y_direction = 1;
+      break;
+    case '3':// down right
+    case 'n':
+      y_direction = 1;
+      break;
+    case '4':// left
+    case 'h':
+      x_direction = -1;
+      break;
+    case '5':// rest
+    case ' ':
+    case '.':
+      break;
+    case '6':// right
+    case 'l':
+      x_direction = 1;
+      break;
+    case '7':// up left
+    case 'y':
+      x_direction = -1;
+      y_direction = -1;
+      break;
+    case '8':// up
+    case 'k':
+      y_direction = -1;
+      break;
+    case '9':// up right
+    case 'u':
+      x_direction = 1;
+      y_direction = -1;
+      break;
+    default:
+      printf("Error: wrong char passed into move_player: %c", direction);
+      return -1;
+      break;
+  }
+  //checks if movement is valid
+  int target_r = pc.y_pos + y_direction;
+  int target_c = pc.x_pos + x_direction;
+  int target_tile = dungeon_display[target_r][target_c];
+  if (target_tile == TILE_ROCK) {
+    printf("player movement invalid: %c\n", direction);
+    return -1; 
+  }
+  //kills the monster if there is a monster in target tile
+  if (target_tile >= 10) {
+    if(entities[target_r][target_c] != NULL)
+    {
+      character_t *temp[num_entities - 1];
+      //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
+      for(int i = 0; i < num_entities - 1; i++)
+      {
+        temp[i] = heap_remove_min(&entities_heap);	  
+
+        if(temp[i]->x_pos == target_c && temp[i]->y_pos == target_r)
+        {
+          temp[i]->is_alive = 0;
+        }
+      } //reinserts temp into heap
+      for(int i = 0; i < num_entities - 1; i++)
+      {
+        heap_insert(&entities_heap, temp[i]);
+      }
+    }
+  }
+  entities[target_r][target_c] = entities[pc.y_pos][pc.x_pos];
+  entities[pc.y_pos][pc.x_pos] = NULL;
+  dungeon_display[target_r][target_c] = dungeon_display[pc.y_pos][pc.x_pos];
+  dungeon_display[pc.y_pos][pc.x_pos] = dungeon_layout[pc.y_pos][pc.x_pos];
+  pc.y_pos = target_r;
+  pc.x_pos = target_c;
+  return 0;
+}
+
 // makes a new dungeon (used for going upstairs and downstairs)
 void spawn_new_dungeon(int num_rooms, int num_mon) {
-    set_dungeon();
-    create_rooms(&num_rooms);
-    create_stairs();
-    create_paths(&num_rooms);
-    set_layout();
-    create_player();
-    create_entities(num_rooms, &num_mon);
-    set_hardness();
-    entities_heap = generate_entities_heap(num_mon, entities);
+  set_dungeon();
+  create_rooms(&num_rooms);
+  create_stairs();
+  create_paths(&num_rooms);
+  set_layout();
+  create_player();
+  create_entities(num_rooms, &num_mon);
+  set_hardness();
+  entities_heap = generate_entities_heap(num_mon, entities);
 }
 
 void create_entities(int num_rooms, int *num_monsters) {
@@ -192,7 +286,7 @@ void create_entities(int num_rooms, int *num_monsters) {
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
         if (dungeon_display[y][x] == TILE_FLOOR && *num_monsters > 0)
         {
-	  //initializing monster
+          //initializing monster
           dungeon_display[y][x] = 10 + mon_type;
           npc_t *npc = malloc(sizeof(npc_t));
           npc->x_pos = x;
@@ -200,7 +294,7 @@ void create_entities(int num_rooms, int *num_monsters) {
           npc->characteristics = mon_type;
           npc->type = get_monster_type(mon_type);
           character_t *monster = malloc(sizeof(character_t));
-	  monster->sn = seq++;
+          monster->sn = seq++;
           monster->x_pos = x;
           monster->y_pos = y;
           switch (mon_type % 4) {
@@ -569,7 +663,7 @@ void print_dungeon() {
           currentchar = '@';
           break;
 
-        //Monster 10-25 (n - 10 for type)
+          //Monster 10-25 (n - 10 for type)
         case 10:
         case 11:
         case 12:
@@ -597,8 +691,6 @@ void print_dungeon() {
     }  
   }  
   refresh();
-  getch();
-  endwin();
 }
 
 // 0 == rock(space)
@@ -639,7 +731,7 @@ void print_dungeon_terminal(){
           printf("@");
           break;
 
-        //Monster 10-25 (n - 10 for type)
+          //Monster 10-25 (n - 10 for type)
         case 10:
         case 11:
         case 12:
