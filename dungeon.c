@@ -12,7 +12,7 @@ stair_t *upstairs;
 stair_t *downstairs;
 character_t *entities[DUNGEON_ROW][DUNGEON_COL];
 heap_t entities_heap;
-int num_entities;
+int num_ent;
 int num_rooms;
 character_t *monster_list;
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     rooms = malloc(MIN_ROOMS * sizeof(room_t));
     num_upstair = 1;
     num_downstair = 1;
-    num_entities = num_mon + 1;
+    num_ent = num_mon + 1;
     spawn_new_dungeon(num_rooms, num_mon);
   }
   //save to file
@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
   // print_dist_map(dungeon_tunnel_map);
 
   int pc_state = 0;
+  num_ent = num_mon + 1;
   //entities_heap = generate_entities_heap(num_mon, entities);
   while(1)
   {
@@ -110,8 +111,8 @@ int main(int argc, char *argv[]) {
     generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
     pc_state = next_turn(dungeon_layout, dungeon_display,
         dungeon_hardness, entities, dungeon_tunnel_map,
-        dungeon_non_tunnel_map, &entities_heap, (num_mon + 1));
-    if(pc_state > 0)
+        dungeon_non_tunnel_map, &entities_heap, &num_ent);
+    if(pc_state > 0 && num_ent > 1)
     {
       print_dungeon();
       player_next_move = getch();
@@ -119,10 +120,35 @@ int main(int argc, char *argv[]) {
         endwin();
         break;
       } else if (player_next_move == '>' || player_next_move == '<') {
-        interact_stair(player_next_move);
+        interact_stair(player_next_move, num_ent);
       } else {
-        move_player(player_next_move);
+        move_player(player_next_move, &num_ent);
       }
+    }
+    else if(pc_state > 0 && num_ent == 1)
+    {
+      endwin();
+      print_dungeon_terminal();
+      printf("                      _.--.    .--._\n");
+      printf("                    .'  .'      '.  '.\n");
+      printf("                   ;  .'    /\\    '.  ;\n");
+      printf("                   ;  '._,-/  \\-,_.`  ;\n");
+      printf("                   \\  ,`  / /\\ \\  `,  /\n");
+      printf("                    \\/    \\/  \\/    \\/\n");
+      printf("                    ,=_    \\/\\/    _=,\n");
+      printf("                    |  '_   \\/   _'  |\n");
+      printf("                    |_   ''-..-''   _|\n");
+      printf("                    | '-.        .-' |\n");
+      printf("                    |    '\\    /'    |\n");
+      printf("                    |      |  |      |\n");
+      printf("            ___     |      |  |      |     ___\n");
+      printf("        _,-',  ',   '_     |  |     _'   ,'  ,'-,_\n");
+      printf("      _(  \\  \\   \\'=--'-.  |  |  .-'--='/   /  /  )_\n");
+      printf("    ,'  \\  \\  \\   \\      '-'--'-'      /   /  /  /  '.\n");
+      printf("   !     \\  \\  \\   \\                  /   /  /  /     !\n");
+      printf("   :      \\  \\  \\   \\                /   /  /  /      :\n");
+      printf("\n                       PLAYER WINS!\n");
+      break;
     }
     else if(pc_state < 0)
     {
@@ -157,18 +183,21 @@ void update_monster_list() {
 }
 
 // goes up or down the stairs
-void interact_stair(char up_or_down) {
+void interact_stair(char up_or_down, int num_ent) {
   if ((up_or_down == '<' || up_or_down == '>') 
-      && (dungeon_layout[pc.y_pos][pc.x_pos] == TILE_UP
-        || dungeon_layout[pc.y_pos][pc.x_pos] == TILE_DOWN)) {
-    spawn_new_dungeon(num_rooms, num_entities - 1);
-  } else {
+       && (dungeon_layout[pc.y_pos][pc.x_pos] == TILE_UP
+       || dungeon_layout[pc.y_pos][pc.x_pos] == TILE_DOWN))
+  {
+    spawn_new_dungeon(num_rooms, num_ent - 1);
+  }
+  else
+  {
     printf("Not on stair tile");
   }
 }
 
 // moves the player
-int move_player(char direction) {
+int move_player(char direction, int *num_ent) {
   int x_direction = 0;
   int y_direction = 0;
   int is_resting = 0;
@@ -233,9 +262,9 @@ int move_player(char direction) {
   if (target_tile >= 10) {
     if(entities[target_r][target_c] != NULL)
     {
-      character_t *temp[num_entities - 1];
+      character_t *temp[*num_ent - 1];
       //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
-      for(int i = 0; i < num_entities - 1; i++)
+      for(int i = 0; i < *num_ent - 1; i++)
       {
         temp[i] = heap_remove_min(&entities_heap);	  
 
@@ -244,10 +273,11 @@ int move_player(char direction) {
           temp[i]->is_alive = 0;
         }
       } //reinserts temp into heap
-      for(int i = 0; i < num_entities - 1; i++)
+      for(int i = 0; i < *num_ent - 1; i++)
       {
         heap_insert(&entities_heap, temp[i]);
       }
+      (*num_ent)--;
     }
   }
   entities[target_r][target_c] = entities[pc.y_pos][pc.x_pos];

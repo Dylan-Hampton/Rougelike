@@ -3,6 +3,7 @@
 
 //prototypes
 static int32_t monster_path_cmp(const void *key, const void *with);
+static int32_t character_move_cmp(const void *key, const void *with);
 //void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 //void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 
@@ -52,7 +53,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
     character_t *entities[DUNGEON_ROW][DUNGEON_COL],
     int tunnel[DUNGEON_ROW][DUNGEON_COL],
     int nontunnel[DUNGEON_ROW][DUNGEON_COL],
-    heap_t *h, int num_ent)
+    heap_t *h, int *num_ent)
 {
   //removing minimum turn character and updating turn, if monster then moves based on given characteristics
   int pc_alive = 1;
@@ -172,9 +173,9 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
     //killing any monsters standing on next tile
     if(entities[min_y][min_x] != NULL)
     {
-      character_t *temp[num_ent - 1];
+      character_t *temp[(*num_ent) - 1];
       //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
-      for(int i = 0; i < num_ent - 1; i++)
+      for(int i = 0; i < (*num_ent) - 1; i++)
       {
         temp[i] = heap_remove_min(h);	  
 
@@ -183,7 +184,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
           temp[i]->is_alive = 0;
         }
       } //reinserts temp into heap
-      for(int i = 0; i < num_ent - 1; i++)
+      for(int i = 0; i < (*num_ent) - 1; i++)
       {
         heap_insert(h, temp[i]);
       }
@@ -191,6 +192,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
       dungeon_display[min_y][min_x] = dungeon_display[c->y_pos][c->x_pos];
       dungeon_display[c->y_pos][c->x_pos] = dungeon_layout[c->y_pos][c->x_pos];	 
       move = 1;
+      (*num_ent)--;
 
       if(entities[min_y][min_x]->is_pc)
       {
@@ -234,7 +236,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
       c->y_pos = min_y;
       c->x_pos = min_x;
     }
-  }           
+  }
 
   heap_insert(h, c);
 

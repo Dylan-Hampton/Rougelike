@@ -84,13 +84,13 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	       character_t *entities[DUNGEON_ROW][DUNGEON_COL],
 	       int tunnel[DUNGEON_ROW][DUNGEON_COL],
 	       int nontunnel[DUNGEON_ROW][DUNGEON_COL],
-	      heap_t *h, int num_ent);
+	      heap_t *h, int *num_ent);
 
 //dungeon.c
 void update_monster_list(); //updates the list of alive monsters
-void interact_stair(char up_or_down); // goes up or down the stairs 
+void interact_stair(char up_or_down, int num_ent); // goes up or down the stairs 
 void spawn_new_dungeon(int num_rooms, int num_mon); //creates a new dungeon with new layout
-int move_player(char direction); // moves the player in direction 
+int move_player(char direction, int *num_ent); // moves the player in direction 
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
 void print_dungeon(); //Prints out the dungeon using ncurses
 void print_dungeon_terminal(); //Prints out the dungeon using terminal output
