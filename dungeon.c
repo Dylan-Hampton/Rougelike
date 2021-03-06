@@ -14,6 +14,7 @@ character_t *entities[DUNGEON_ROW][DUNGEON_COL];
 heap_t entities_heap;
 int num_entities;
 int num_rooms;
+character_t *monster_list;
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -110,12 +111,14 @@ int main(int argc, char *argv[]) {
     pc_state = next_turn(dungeon_layout, dungeon_display,
         dungeon_hardness, entities, dungeon_tunnel_map,
         dungeon_non_tunnel_map, &entities_heap, (num_mon + 1));
-
     if(pc_state > 0)
     {
       print_dungeon();
       player_next_move = getch();
-      if (player_next_move == '>' || player_next_move == '<') {
+      if (player_next_move == 'Q') {
+        endwin();
+        break;
+      } else if (player_next_move == '>' || player_next_move == '<') {
         interact_stair(player_next_move);
       } else {
         move_player(player_next_move);
@@ -149,6 +152,10 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+void update_monster_list() {
+  //TODO
+}
+
 // goes up or down the stairs
 void interact_stair(char up_or_down) {
   if ((up_or_down == '<' || up_or_down == '>') 
@@ -164,6 +171,7 @@ void interact_stair(char up_or_down) {
 int move_player(char direction) {
   int x_direction = 0;
   int y_direction = 0;
+  int is_resting = 0;
   switch (direction) {
     case '1':// down left
     case 'b':
@@ -185,6 +193,7 @@ int move_player(char direction) {
     case '5':// rest
     case ' ':
     case '.':
+      is_resting = 1;
       break;
     case '6':// right
     case 'l':
@@ -208,6 +217,9 @@ int move_player(char direction) {
       printf("Error: wrong char passed into move_player: %c", direction);
       return -1;
       break;
+  }
+  if (is_resting) {
+    return 0;
   }
   //checks if movement is valid
   int target_r = pc.y_pos + y_direction;
@@ -249,6 +261,7 @@ int move_player(char direction) {
 
 // makes a new dungeon (used for going upstairs and downstairs)
 void spawn_new_dungeon(int num_rooms, int num_mon) {
+  //clears the entities array
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {
       entities[r][c] = NULL;
