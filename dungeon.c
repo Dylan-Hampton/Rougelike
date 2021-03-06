@@ -15,7 +15,7 @@ heap_t entities_heap;
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
-  int load = 0, save = 0, num_mon = 10, fps = 4;
+  int load = 0, save = 0, num_mon = 10;//, fps = 4;
   int readErr = 0, writeErr = 0, num_rooms = 0, num_upstair = 0, num_downstair = 0;
 
   //check for save or load switches
@@ -35,10 +35,12 @@ int main(int argc, char *argv[]) {
       {
         num_mon = atoi(argv[++i]);
       }
+      /*
       if(!strcmp(argv[i], "--fps") || !strcmp(argv[i], "-f"))
       {
         fps = atoi(argv[++i]);
       }
+      */
     }
   }
 
@@ -52,20 +54,13 @@ int main(int argc, char *argv[]) {
   //create our own dungeon
   else
   {
-    set_dungeon();
     upstairs = malloc(sizeof(stair_t)); //If we know we are creating our own dungeon we can malloc the stairs with size 1
     downstairs = malloc(sizeof(stair_t));
     rooms = malloc(MIN_ROOMS * sizeof(room_t));
     num_upstair = 1;
     num_downstair = 1;
 
-    create_rooms(&num_rooms);
-    create_stairs();
-    create_paths(&num_rooms);
-    set_layout();
-    create_player();
-    create_entities(num_rooms, &num_mon);
-    set_hardness();
+    spawn_new_dungeon(num_rooms, num_mon);
   }
   //save to file
   if (save == 1)
@@ -90,7 +85,7 @@ int main(int argc, char *argv[]) {
   // print_dist_map(dungeon_tunnel_map);
 
   int pc_state = 0;
-  entities_heap = generate_entities_heap(num_mon, entities);
+  //entities_heap = generate_entities_heap(num_mon, entities);
   while(1)
   {
     /**
@@ -113,7 +108,6 @@ int main(int argc, char *argv[]) {
     if(pc_state > 0)
     {
       print_dungeon();
-      usleep(1000000/fps);
     }
     else if(pc_state < 0)
     {
@@ -140,6 +134,19 @@ int main(int argc, char *argv[]) {
     }
   }
   return 0;
+}
+
+// makes a new dungeon (used for going upstairs and downstairs)
+void spawn_new_dungeon(int num_rooms, int num_mon) {
+    set_dungeon();
+    create_rooms(&num_rooms);
+    create_stairs();
+    create_paths(&num_rooms);
+    set_layout();
+    create_player();
+    create_entities(num_rooms, &num_mon);
+    set_hardness();
+    entities_heap = generate_entities_heap(num_mon, entities);
 }
 
 void create_entities(int num_rooms, int *num_monsters) {
@@ -530,6 +537,70 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
   }
 }
 
+//prints the dungeon with ncurses
+void print_dungeon() {
+  //initializing the screen and turning on keyboard input
+  initscr();
+  char currentchar;
+  for (int r = 0; r < DUNGEON_ROW; r++) {
+    for (int c = 0; c < DUNGEON_COL; c++) {
+      switch(dungeon_display[r][c])
+      {
+        case TILE_ROCK:
+          currentchar = ' ';
+          break;
+        case TILE_FLOOR:
+          currentchar = '.';
+          break;
+
+        case TILE_CORR:
+          currentchar = '#';
+          break;
+
+        case TILE_DOWN:
+          currentchar = '>';
+          break;
+
+        case TILE_UP:
+          currentchar = '<';
+          break;
+
+        case TILE_PC:
+          currentchar = '@';
+          break;
+
+        //Monster 10-25 (n - 10 for type)
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+        case 16:
+        case 17:
+        case 18:
+        case 19:
+        case 20:
+        case 21:
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+          currentchar = get_monster_type(dungeon_display[r][c] - 10);
+          break;
+
+        default:
+          currentchar = '!';
+          break;
+      }
+      mvwaddch(stdscr, r, c, currentchar);
+    }  
+  }  
+  refresh();
+  getch();
+  endwin();
+}
+
 // 0 == rock(space)
 // 1 == room floor('.')
 // 2 == corridor('#')
@@ -537,7 +608,7 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 // 4 == upstairs('<')
 // 5 == player character('@')
 // 6 == monster('type')
-void print_dungeon(){
+void print_dungeon_terminal(){
 
   for(int r = 0; r < DUNGEON_ROW; r++)
   {
@@ -762,38 +833,3 @@ int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
 
   return 0;
 }
-
-/*
-   printf("Marker: %s \n", fileMarker);
-   printf("Version: %d \n", fileVersion);
-   printf("File Size: %d \n", fileSize);
-   printf("PC x,y: %d,%d\n", pc.x_pos, pc.y_pos);
-   printf("===============\n");
-
-   for (int r = 0; r < DUNGEON_ROW; r++)
-   {
-   for (int c = 0; c < DUNGEON_COL; c++)
-   {
-   printf("%3d ", dungeon_hardness[r][c]);
-   }
-   printf("\n");
-   }
-   printf("===============\n");
-
-   printf("%d \n", uNumRooms);
-   for(int i = 0; i < uNumRooms; i++)
-   {
-   printf("pos x,y: %d,%d ,  dims x,y: %d,%d \n", rooms[i].x_pos, rooms[i].y_pos, rooms[i].x_width, rooms[i].y_height);
-   }
-
-   printf("Number of upstairs: %d \n", num_up);
-   for (int i = 0; i < *num_upstair; i++)
-   {
-   printf("Upstairs %d: %d,%d \n", i, upstairs[i].x_pos, upstairs[i].y_pos);
-   }
-   printf("Number of downstairs: %d \n", num_down);
-   for (int i = 0; i < *num_downstair; i++)
-   {
-   printf("Downstairs %d: %d,%d \n", i, downstairs[i].x_pos, downstairs[i].y_pos);
-   } */
-

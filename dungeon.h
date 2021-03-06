@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <endian.h>
 #include <limits.h>
+#include <ncurses.h>
 
 //Constants
 #define DUNGEON_ROW 21
@@ -86,8 +87,10 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	      heap_t *h, int num_ent);
 
 //dungeon.c
+void spawn_new_dungeon(int num_rooms, int num_mon); //creates a new dungeon with new layout
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
-void print_dungeon(); //Prints out the dungeon
+void print_dungeon(); //Prints out the dungeon using ncurses
+void print_dungeon_terminal(); //Prints out the dungeon using terminal output
 void set_layout(); //sets the layout of dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
 void create_rooms(); //Creates 6 random rooms of random but minimum size
