@@ -87,6 +87,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 	      heap_t *h, int num_ent);
 
 //dungeon.c
+void interact_stair(char up_or_down); // goes up or down the stairs 
 void spawn_new_dungeon(int num_rooms, int num_mon); //creates a new dungeon with new layout
 int move_player(char direction); // moves the player in direction 
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map

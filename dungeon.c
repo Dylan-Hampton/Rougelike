@@ -13,11 +13,13 @@ stair_t *downstairs;
 character_t *entities[DUNGEON_ROW][DUNGEON_COL];
 heap_t entities_heap;
 int num_entities;
+int num_rooms;
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
   int load = 0, save = 0, num_mon = 10;//, fps = 4;
-  int readErr = 0, writeErr = 0, num_rooms = 0, num_upstair = 0, num_downstair = 0;
+  int readErr = 0, writeErr = 0, num_upstair = 0, num_downstair = 0;
+  num_rooms = 0;
   char player_next_move;
 
   //check for save or load switches
@@ -95,14 +97,14 @@ int main(int argc, char *argv[]) {
       (0 == (monster turn) alive, -1 == player died, 1 == player turn (alive)) 
      **/
     // prints the tunneling map for debugging
-//       for (int r = 0; r < DUNGEON_ROW; r++) {
- //      for (int c = 0; c < DUNGEON_COL; c++) {
-  //     printf("%2d", dungeon_tunnel_map[r][c]);
-   //    }
+    //       for (int r = 0; r < DUNGEON_ROW; r++) {
+    //      for (int c = 0; c < DUNGEON_COL; c++) {
+    //     printf("%2d", dungeon_tunnel_map[r][c]);
+    //    }
     //   printf("\n");
-     //  }
-      // printf("\n\n");
-     
+    //  }
+    // printf("\n\n");
+
     generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
     generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
     pc_state = next_turn(dungeon_layout, dungeon_display,
@@ -113,7 +115,11 @@ int main(int argc, char *argv[]) {
     {
       print_dungeon();
       player_next_move = getch();
-      move_player(player_next_move);
+      if (player_next_move == '>' || player_next_move == '<') {
+        interact_stair(player_next_move);
+      } else {
+        move_player(player_next_move);
+      }
     }
     else if(pc_state < 0)
     {
@@ -141,6 +147,17 @@ int main(int argc, char *argv[]) {
     }
   }
   return 0;
+}
+
+// goes up or down the stairs
+void interact_stair(char up_or_down) {
+  if ((up_or_down == '<' || up_or_down == '>') 
+      && (dungeon_layout[pc.y_pos][pc.x_pos] == TILE_UP
+        || dungeon_layout[pc.y_pos][pc.x_pos] == TILE_DOWN)) {
+    spawn_new_dungeon(num_rooms, num_entities - 1);
+  } else {
+    printf("Not on stair tile");
+  }
 }
 
 // moves the player
@@ -232,6 +249,11 @@ int move_player(char direction) {
 
 // makes a new dungeon (used for going upstairs and downstairs)
 void spawn_new_dungeon(int num_rooms, int num_mon) {
+  for (int r = 0; r < DUNGEON_ROW; r++) {
+    for (int c = 0; c < DUNGEON_COL; c++) {
+      entities[r][c] = NULL;
+    }
+  }
   set_dungeon();
   create_rooms(&num_rooms);
   create_stairs();
