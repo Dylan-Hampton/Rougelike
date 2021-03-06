@@ -79,18 +79,18 @@ void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_C
 void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL], int monster_dist[DUNGEON_ROW][DUNGEON_COL], int pc_x, int pc_y);
 heap_t generate_entities_heap(int num_mon, character_t *entities[DUNGEON_ROW][DUNGEON_COL]);
 int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
-	       int dungeon_display[DUNGEON_ROW][DUNGEON_COL],
-	       uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL],
-	       character_t *entities[DUNGEON_ROW][DUNGEON_COL],
-	       int tunnel[DUNGEON_ROW][DUNGEON_COL],
-	       int nontunnel[DUNGEON_ROW][DUNGEON_COL],
-	      heap_t *h, int *num_ent);
+    int dungeon_display[DUNGEON_ROW][DUNGEON_COL],
+    uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL],
+    character_t *entities[DUNGEON_ROW][DUNGEON_COL],
+    int tunnel[DUNGEON_ROW][DUNGEON_COL],
+    int nontunnel[DUNGEON_ROW][DUNGEON_COL],
+    heap_t *h, int num_ent, int *alive_ent);
 
 //dungeon.c
 void update_monster_list(); //updates the list of alive monsters
 void interact_stair(char up_or_down, int num_ent); // goes up or down the stairs 
 void spawn_new_dungeon(int num_rooms, int num_mon); //creates a new dungeon with new layout
-int move_player(char direction, int *num_ent); // moves the player in direction 
+int move_player(char direction, int num_ent, int *alive_ent); // moves the player in direction 
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
 void print_dungeon(); //Prints out the dungeon using ncurses
 void print_dungeon_terminal(); //Prints out the dungeon using terminal output

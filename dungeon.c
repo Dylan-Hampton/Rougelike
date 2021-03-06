@@ -91,6 +91,7 @@ int main(int argc, char *argv[]) {
 
   int pc_state = 0;
   num_ent = num_mon + 1;
+  int alive_ent = num_mon + 1;
   //entities_heap = generate_entities_heap(num_mon, entities);
   while(1)
   {
@@ -111,7 +112,7 @@ int main(int argc, char *argv[]) {
     generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
     pc_state = next_turn(dungeon_layout, dungeon_display,
         dungeon_hardness, entities, dungeon_tunnel_map,
-        dungeon_non_tunnel_map, &entities_heap, &num_ent);
+			 dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
     if(pc_state > 0 && num_ent > 1)
     {
       print_dungeon();
@@ -122,10 +123,10 @@ int main(int argc, char *argv[]) {
       } else if (player_next_move == '>' || player_next_move == '<') {
         interact_stair(player_next_move, num_ent);
       } else {
-        move_player(player_next_move, &num_ent);
+        move_player(player_next_move, num_ent, &alive_ent);
       }
     }
-    else if(pc_state > 0 && num_ent == 1)
+    else if(pc_state > 0 && alive_ent == 1)
     {
       endwin();
       print_dungeon_terminal();
@@ -197,7 +198,7 @@ void interact_stair(char up_or_down, int num_ent) {
 }
 
 // moves the player
-int move_player(char direction, int *num_ent) {
+int move_player(char direction, int num_ent, int *alive_ent) {
   int x_direction = 0;
   int y_direction = 0;
   int is_resting = 0;
@@ -262,9 +263,9 @@ int move_player(char direction, int *num_ent) {
   if (target_tile >= 10) {
     if(entities[target_r][target_c] != NULL)
     {
-      character_t *temp[*num_ent - 1];
+      character_t *temp[num_ent - 1];
       //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
-      for(int i = 0; i < *num_ent - 1; i++)
+      for(int i = 0; i < num_ent - 1; i++)
       {
         temp[i] = heap_remove_min(&entities_heap);	  
 
@@ -273,11 +274,11 @@ int move_player(char direction, int *num_ent) {
           temp[i]->is_alive = 0;
         }
       } //reinserts temp into heap
-      for(int i = 0; i < *num_ent - 1; i++)
+      for(int i = 0; i < num_ent - 1; i++)
       {
         heap_insert(&entities_heap, temp[i]);
       }
-      (*num_ent)--;
+      (*alive_ent)--;
     }
   }
   entities[target_r][target_c] = entities[pc.y_pos][pc.x_pos];
