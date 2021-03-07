@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  free(upstairs);
+  free(downstairs);
+  free(rooms);
+  
   // print dungeon_display
   print_dungeon();
   // printf("\n");
@@ -91,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   int pc_state = 0;
   num_ent = num_mon + 1;
-  int alive_ent = num_mon + 1;
+  int alive_ent = num_ent;
   //entities_heap = generate_entities_heap(num_mon, entities);
   while(1)
   {
@@ -121,9 +125,9 @@ int main(int argc, char *argv[]) {
         endwin();
         break;
       } else if (player_next_move == '>' || player_next_move == '<') {
-        interact_stair(player_next_move, num_ent);
+        interact_stair(player_next_move, num_ent, dungeon_layout, num_rooms, pc);
       } else {
-        move_player(player_next_move, num_ent, &alive_ent);
+        move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
       }
     }
     else if(pc_state > 0 && alive_ent == 1)
@@ -181,113 +185,6 @@ int main(int argc, char *argv[]) {
 
 void update_monster_list() {
   //TODO
-}
-
-// goes up or down the stairs
-void interact_stair(char up_or_down, int num_ent) {
-  if ((up_or_down == '<' || up_or_down == '>') 
-       && (dungeon_layout[pc.y_pos][pc.x_pos] == TILE_UP
-       || dungeon_layout[pc.y_pos][pc.x_pos] == TILE_DOWN))
-  {
-    spawn_new_dungeon(num_rooms, num_ent - 1);
-  }
-  else
-  {
-    printf("Not on stair tile");
-  }
-}
-
-// moves the player
-int move_player(char direction, int num_ent, int *alive_ent) {
-  int x_direction = 0;
-  int y_direction = 0;
-  int is_resting = 0;
-  switch (direction) {
-    case '1':// down left
-    case 'b':
-      x_direction = -1;
-      y_direction = 1;
-      break;
-    case '2':// down
-    case 'j':
-      y_direction = 1;
-      break;
-    case '3':// down right
-    case 'n':
-      y_direction = 1;
-      break;
-    case '4':// left
-    case 'h':
-      x_direction = -1;
-      break;
-    case '5':// rest
-    case ' ':
-    case '.':
-      is_resting = 1;
-      break;
-    case '6':// right
-    case 'l':
-      x_direction = 1;
-      break;
-    case '7':// up left
-    case 'y':
-      x_direction = -1;
-      y_direction = -1;
-      break;
-    case '8':// up
-    case 'k':
-      y_direction = -1;
-      break;
-    case '9':// up right
-    case 'u':
-      x_direction = 1;
-      y_direction = -1;
-      break;
-    default:
-      printf("Error: wrong char passed into move_player: %c", direction);
-      return -1;
-      break;
-  }
-  if (is_resting) {
-    return 0;
-  }
-  //checks if movement is valid
-  int target_r = pc.y_pos + y_direction;
-  int target_c = pc.x_pos + x_direction;
-  int target_tile = dungeon_display[target_r][target_c];
-  if (target_tile == TILE_ROCK) {
-    printf("player movement invalid: %c\n", direction);
-    return -1; 
-  }
-  //kills the monster if there is a monster in target tile
-  if (target_tile >= 10) {
-    if(entities[target_r][target_c] != NULL)
-    {
-      character_t *temp[num_ent - 1];
-      //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
-      for(int i = 0; i < num_ent - 1; i++)
-      {
-        temp[i] = heap_remove_min(&entities_heap);	  
-
-        if(temp[i]->x_pos == target_c && temp[i]->y_pos == target_r)
-        {
-          temp[i]->is_alive = 0;
-        }
-      } //reinserts temp into heap
-      for(int i = 0; i < num_ent - 1; i++)
-      {
-        heap_insert(&entities_heap, temp[i]);
-      }
-      (*alive_ent)--;
-    }
-  }
-  entities[target_r][target_c] = entities[pc.y_pos][pc.x_pos];
-  entities[pc.y_pos][pc.x_pos] = NULL;
-  dungeon_display[target_r][target_c] = dungeon_display[pc.y_pos][pc.x_pos];
-  dungeon_display[pc.y_pos][pc.x_pos] = dungeon_layout[pc.y_pos][pc.x_pos];
-  pc.y_pos = target_r;
-  pc.x_pos = target_c;
-  return 0;
 }
 
 // makes a new dungeon (used for going upstairs and downstairs)

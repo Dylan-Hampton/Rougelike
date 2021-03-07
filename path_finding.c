@@ -112,7 +112,10 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
               && c->y_pos + i < DUNGEON_ROW
               && c->x_pos + j >= 0 
               && c->x_pos + j < DUNGEON_COL) {
-            if (map[c->y_pos + i][(c->x_pos + j)] < min) {
+            if (map[c->y_pos + i][(c->x_pos + j)] < min &&
+		dungeon_layout[c->y_pos + i][(c->x_pos + j)] != TILE_UP &&
+		 dungeon_layout[c->y_pos + i][(c->x_pos + j)] != TILE_DOWN)
+	    {	      
               min = map[c->y_pos + i][(c->x_pos + j)];
               min_y = c->y_pos + i;
               min_x = (c->x_pos + j);
@@ -124,11 +127,14 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
       for (int attempts = 0; attempts < 1000; attempts++) {
         min_y = c->y_pos + (rand() % 3) - 1;
         min_x = c->x_pos + (rand() % 3) - 1;
-        if (!(min_x == c->x_pos && min_y == c->y_pos)) {
+        if (!(min_x == c->x_pos && min_y == c->y_pos) &&
+	    dungeon_layout[min_y][min_x] != TILE_UP &&
+            dungeon_layout[min_y][min_x] != TILE_DOWN) {
           if(min_y >= 0
               && min_y < DUNGEON_ROW
               && min_x >= 0 
-              && min_x < DUNGEON_COL) {
+              && min_x < DUNGEON_COL)
+	  {
             attempts = 1000;
           }
         }
@@ -139,7 +145,9 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
       for (int attempts = 0; attempts < 1000; attempts++) {
         min_y = c->y_pos + (rand() % 3) - 1;
         min_x = c->x_pos + (rand() % 3) - 1;
-        if (dungeon_hardness[min_y][min_x] == 0 && !(min_x == c->x_pos && min_y == c->y_pos)) {
+        if (dungeon_hardness[min_y][min_x] == 0 && !(min_x == c->x_pos && min_y == c->y_pos) &&
+	    dungeon_layout[min_y][min_x] != TILE_UP &&
+            dungeon_layout[min_y][min_x] != TILE_DOWN) {
           if(min_y >= 0
               && min_y < DUNGEON_ROW
               && min_x >= 0 
@@ -157,7 +165,9 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
       for (int attempts = 0; attempts < 1000; attempts++) {
         min_y = c->y_pos + (rand() % 3) - 1;
         min_x = c->x_pos + (rand() % 3) - 1;
-        if (dungeon_hardness[min_y][min_x] == 0 && !(min_x == c->x_pos && min_y == c->y_pos)) {
+        if (dungeon_hardness[min_y][min_x] == 0 && !(min_x == c->x_pos && min_y == c->y_pos) &&
+	    dungeon_layout[min_y][min_x] != TILE_UP &&
+             dungeon_layout[min_y][min_x] != TILE_DOWN) {
           if(min_y >= 0
               && min_y < DUNGEON_ROW
               && min_x >= 0 
