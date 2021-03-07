@@ -1,4 +1,4 @@
-3/06/21 DH/BN: Added EPIC player win screen, added player_movement.c which contains both methods to move player, stopped monsters from moving onto stairs
+3/06/21 DH/BN: Added EPIC player win screen, added player_movement.c which contains both methods to move player, stopped monsters from moving onto stairs, added update_monster_list
 3/05/2021 BN: Added spawn_new_dungeon method to make a new dungeon without having to call a million methods. also implemented ncurses version print_dungeon, made the player movement fully functional, added stairs functionality (does not remember previous dungeons), added quit button
 3/03/2021 DH/BN: Added corridor creation when monster moves through rock, added monster deaths, added player lose case, refactored variable names, bug fixed, and added EPIC ending screen, added erratic and dumb characterisitic //1.04 assignment done
 3/02/2021 DH/BN: modified entities to be based on 2d array, modified print statement, fixed heap initialization and next_turn, got telepathic monsters to move the way they are supposed to

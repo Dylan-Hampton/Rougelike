@@ -14,7 +14,7 @@ character_t *entities[DUNGEON_ROW][DUNGEON_COL];
 heap_t entities_heap;
 int num_ent;
 int num_rooms;
-character_t *monster_list;
+npc_t *monster_list;
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -54,7 +54,9 @@ int main(int argc, char *argv[]) {
   {
     readErr = load_dungeon(&num_rooms, &num_upstair, &num_downstair); // load from file
     set_layout();
-    create_entities(num_rooms, &num_mon); 
+    create_entities(num_rooms, &num_mon);
+    num_ent = num_mon + 1;
+    monster_list = malloc(num_ent * sizeof(npc_t));
   }
   //create our own dungeon
   else
@@ -65,6 +67,7 @@ int main(int argc, char *argv[]) {
     num_upstair = 1;
     num_downstair = 1;
     num_ent = num_mon + 1;
+    monster_list = malloc(num_ent * sizeof(npc_t));
     spawn_new_dungeon(num_rooms, num_mon);
   }
   //save to file
@@ -129,7 +132,9 @@ int main(int argc, char *argv[]) {
       } else {
         move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
       }
-    }
+      update_monster_list(num_ent);
+    } 
+    
     else if(pc_state > 0 && alive_ent == 1)
     {
       endwin();
@@ -183,8 +188,27 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void update_monster_list() {
-  //TODO
+void update_monster_list(int num_ent) {
+  character_t *temp[num_ent - 1];
+  int index = 0;
+  for(int i = 0; i < num_ent - 1; i++)
+      {
+        temp[i] = heap_remove_min(&entities_heap);	  
+
+        if(temp[i]->is_alive && !(temp[i]->is_pc))
+        {
+	  npc_t npc;
+	  npc.x_pos = temp[i]->npc->x_pos;
+	  npc.y_pos = temp[i]->npc->y_pos;
+	  npc.characteristics = temp[i]->npc->characteristics;
+	  npc.type = temp[i]->npc->type;
+          monster_list[index++] = npc;
+        }
+      } //reinserts temp into heap
+      for(int i = 0; i < num_ent - 1; i++)
+      {
+        heap_insert(&entities_heap, temp[i]);
+      }
 }
 
 // makes a new dungeon (used for going upstairs and downstairs)
