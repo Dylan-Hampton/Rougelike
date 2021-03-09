@@ -83,15 +83,15 @@ int main(int argc, char *argv[]) {
   free(upstairs);
   free(downstairs);
   free(rooms);
- 
+
   initscr();
   echo();
   raw();
   curs_set(0);
   keypad(stdscr, TRUE);
- 
+
   // print dungeon_display
-  print_dungeon();
+  print_dungeon(0);
   // printf("\n");
   // making dist maps and printing them
   // non tunneling
@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
   int pc_state = 0;
   num_ent = num_mon + 1;
   int alive_ent = num_ent;
+  int pc_can_move = 0;
   //entities_heap = generate_entities_heap(num_mon, entities);
 
   while(1)
@@ -126,10 +127,10 @@ int main(int argc, char *argv[]) {
     generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
     pc_state = next_turn(dungeon_layout, dungeon_display,
         dungeon_hardness, entities, dungeon_tunnel_map,
-			 dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
+        dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
     if(pc_state > 0 && num_ent > 1)
     {
-      print_dungeon();
+      print_dungeon(pc_can_move);
       player_next_move = getch();
       if (player_next_move == 'Q') {
         endwin();
@@ -137,11 +138,11 @@ int main(int argc, char *argv[]) {
       } else if (player_next_move == '>' || player_next_move == '<') {
         interact_stair(player_next_move, num_ent, dungeon_layout, num_rooms, pc);
       } else {
-        move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+        pc_can_move = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
       }
       update_monster_list(num_ent);
     } 
-    
+
     else if(pc_state > 0 && alive_ent == 1)
     {
       endwin();
@@ -199,23 +200,23 @@ void update_monster_list(int num_ent) {
   character_t *temp[num_ent - 1];
   int index = 0;
   for(int i = 0; i < num_ent - 1; i++)
-      {
-        temp[i] = heap_remove_min(&entities_heap);	  
+  {
+    temp[i] = heap_remove_min(&entities_heap);	  
 
-        if(temp[i]->is_alive && !(temp[i]->is_pc))
-        {
-	  npc_t npc;
-	  npc.x_pos = temp[i]->npc->x_pos;
-	  npc.y_pos = temp[i]->npc->y_pos;
-	  npc.characteristics = temp[i]->npc->characteristics;
-	  npc.type = temp[i]->npc->type;
-          monster_list[index++] = npc;
-        }
-      } //reinserts temp into heap
-      for(int i = 0; i < num_ent - 1; i++)
-      {
-        heap_insert(&entities_heap, temp[i]);
-      }
+    if(temp[i]->is_alive && !(temp[i]->is_pc))
+    {
+      npc_t npc;
+      npc.x_pos = temp[i]->npc->x_pos;
+      npc.y_pos = temp[i]->npc->y_pos;
+      npc.characteristics = temp[i]->npc->characteristics;
+      npc.type = temp[i]->npc->type;
+      monster_list[index++] = npc;
+    }
+  } //reinserts temp into heap
+  for(int i = 0; i < num_ent - 1; i++)
+  {
+    heap_insert(&entities_heap, temp[i]);
+  }
 }
 
 // makes a new dungeon (used for going upstairs and downstairs)
@@ -626,9 +627,12 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 }
 
 //prints the dungeon with ncurses
-void print_dungeon() {
+void print_dungeon(int player_can_move) {
   //initializing the screen and turning on keyboard input
   clear();
+  if (player_can_move < 0) {
+    mvprintw(0, 1, "There is a wall in the way!"); 
+  }
   char currentchar;
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {
@@ -681,7 +685,7 @@ void print_dungeon() {
           currentchar = '!';
           break;
       }
-      mvwaddch(stdscr, r, c, currentchar);
+      mvwaddch(stdscr, r + 1, c, currentchar);
     }  
   }  
   refresh();

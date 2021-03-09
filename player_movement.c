@@ -10,7 +10,7 @@ void interact_stair(char up_or_down, int num_ent, int dungeon_layout[DUNGEON_ROW
   }
   else
   {
-    printf("Not on stair tile");
+    //printf("Not on stair tile");
   }
 }
 
@@ -64,7 +64,6 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
       break;
     default:
 //      printf("Error: wrong char passed into move_player: %c", direction);
-      // mvprintw(23, 1, "Unknown key: %o", direction); 
       return -1;
       break;
   }
