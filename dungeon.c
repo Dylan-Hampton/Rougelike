@@ -225,6 +225,8 @@ int main(int argc, char *argv[]) {
 }
 
 void update_monster_list(int num_ent) {
+  free(monster_list);
+  monster_list = malloc(num_ent * sizeof(npc_t));
   character_t *temp[num_ent - 1];
   int index = 0;
   for(int i = 0; i < num_ent - 1; i++)
