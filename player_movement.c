@@ -17,6 +17,7 @@ void interact_stair(char up_or_down, int num_ent, int dungeon_layout[DUNGEON_ROW
 // moves the player
 int move_player(char direction, int num_ent, int *alive_ent, character_t *entities[DUNGEON_ROW][DUNGEON_COL],
 		int dungeon_display[DUNGEON_ROW][DUNGEON_COL], pc_t *pc, heap_t *entities_heap, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL]) {
+  int has_killed_monster = 0;
   int x_direction = 0;
   int y_direction = 0;
   int is_resting = 0;
@@ -75,13 +76,14 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
   int target_c = pc->x_pos + x_direction;
   int target_tile = dungeon_display[target_r][target_c];
   if (target_tile == TILE_ROCK) {
-    printf("player movement invalid: %c\n", direction);
+    //printf("player movement invalid: %c\n", direction);
     return -1; 
   }
   //kills the monster if there is a monster in target tile
   if (target_tile >= 10) {
     if(entities[target_r][target_c] != NULL)
     {
+      has_killed_monster = 1;
       character_t *temp[num_ent - 1];
       //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
       for(int i = 0; i < num_ent - 1; i++)
@@ -106,5 +108,8 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
   dungeon_display[pc->y_pos][pc->x_pos] = dungeon_layout[pc->y_pos][pc->x_pos];
   pc->y_pos = target_r;
   pc->x_pos = target_c;
+if (!has_killed_monster) {
   return 0;
+}
+  return 1;
 }

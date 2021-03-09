@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   int pc_state = 0;
   num_ent = num_mon + 1;
   int alive_ent = num_ent;
-  int pc_can_move = 0;
+  int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
   //entities_heap = generate_entities_heap(num_mon, entities);
 
   while(1)
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
         dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
     if(pc_state > 0 && num_ent > 1)
     {
-      print_dungeon(pc_can_move);
+      print_dungeon(pc_other_action);
       player_next_move = getch();
       if (player_next_move == 'Q') {
         endwin();
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
       } else if (player_next_move == '>' || player_next_move == '<') {
         interact_stair(player_next_move, num_ent, dungeon_layout, num_rooms, pc);
       } else {
-        pc_can_move = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+        pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
       }
       update_monster_list(num_ent);
     } 
@@ -627,11 +627,13 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 }
 
 //prints the dungeon with ncurses
-void print_dungeon(int player_can_move) {
+void print_dungeon(int player_other_action) {
   //initializing the screen and turning on keyboard input
   clear();
-  if (player_can_move < 0) {
+  if (player_other_action < 0) {
     mvprintw(0, 1, "There is a wall in the way!"); 
+  } else if (player_other_action > 0) {
+    mvprintw(0, 1, "Slayed a monster!"); 
   }
   char currentchar;
   for (int r = 0; r < DUNGEON_ROW; r++) {
