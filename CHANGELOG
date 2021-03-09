@@ -1,3 +1,4 @@
+3/09/21 BN: Added so that if there is an invalid input, monsters will not move
 3/09/21 DH: Added scroll functionality to monster list
 3/08/21 DH/BN/CB: Added reserve for line 0 for text messages, added monster display
 3/06/21 DH/BN: Added EPIC player win screen, added player_movement.c which contains both methods to move player, stopped monsters from moving onto stairs, added update_monster_list

@@ -66,7 +66,7 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
       break;
     default:
       //mvprintw(0, 1, "%c", direction);
-      return -1;
+      return -2;
       break;
   }
   if (is_resting) {

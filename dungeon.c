@@ -139,7 +139,10 @@ int main(int argc, char *argv[]) {
       if (is_in_mon_list) {
         print_monster_list(alive_ent, scroll);
         int input = getch();
-        if (input == 27) { //27 is esc key
+        if (input == 'Q') {
+          endwin();
+          break;
+        } else if (input == 27) { //27 is esc key
           was_mon_list = 1;
 	  is_in_mon_list = 0;
         } else if (input == KEY_DOWN && scroll < alive_ent && alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent) {
@@ -148,7 +151,7 @@ int main(int argc, char *argv[]) {
           scroll--;
         }	
       } else {
-	was_mon_list = 0;
+	      was_mon_list = 0;
         print_dungeon(pc_other_action);
         player_next_move = getch();
         if (player_next_move == 'Q') {
@@ -160,6 +163,9 @@ int main(int argc, char *argv[]) {
           interact_stair(player_next_move, num_ent, dungeon_layout, num_rooms, pc);
         } else {
           pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+          if (pc_other_action < 0) {
+            was_mon_list = 1;
+          }
         }
         update_monster_list(num_ent);
       }
@@ -652,7 +658,7 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 void print_dungeon(int player_other_action) {
   //initializing the screen and turning on keyboard input
   clear();
-  if (player_other_action < 0) {
+  if (player_other_action == -1) {
     mvprintw(0, 1, "There is a wall in the way!"); 
   } else if (player_other_action > 0) {
     mvprintw(0, 1, "Slayed a monster!"); 
