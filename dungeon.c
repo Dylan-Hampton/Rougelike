@@ -138,12 +138,12 @@ int main(int argc, char *argv[]) {
       if (is_in_mon_list) {
         print_monster_list(num_ent, scroll);
         int input = getch();
-        if (input == 27) {
+        if (input == 27) { //27 is esc key
           was_mon_list = 1;
 	  is_in_mon_list = 0;
-        } else if (input == 72 && scroll < alive_ent) {
+        } else if (input == KEY_UP && scroll < alive_ent) {
           scroll++;
-        } else if (input == 80 && scroll > 0) {
+        } else if (input == KEY_DOWN && scroll > 0) {
           scroll--;
         }	
       } else {
