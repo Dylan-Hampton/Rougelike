@@ -66,9 +66,10 @@ int main(int argc, char *argv[]) {
     rooms = malloc(MIN_ROOMS * sizeof(room_t));
     num_upstair = 1;
     num_downstair = 1;
+    //something with spawn new dungeon causes lag when large num mon
+    spawn_new_dungeon(num_rooms, &num_mon);
     num_ent = num_mon + 1;
     monster_list = malloc(num_ent * sizeof(npc_t));
-    spawn_new_dungeon(num_rooms, num_mon);
   }
   //save to file
   if (save == 1)
@@ -124,7 +125,7 @@ int main(int argc, char *argv[]) {
     //   printf("\n");
     //  }
     // printf("\n\n");
-    if (is_in_mon_list == 0 && !was_mon_list) {
+    if (is_in_mon_list == 0 && was_mon_list == 0) {
     generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
     generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
     pc_state = next_turn(dungeon_layout, dungeon_display,
@@ -133,17 +134,17 @@ int main(int argc, char *argv[]) {
     }
 
     
-    if(pc_state > 0 && num_ent > 1)
+    if((pc_state > 0 && num_ent > 1) || was_mon_list)
     {
       if (is_in_mon_list) {
-        print_monster_list(num_ent, scroll);
+        print_monster_list(alive_ent, scroll);
         int input = getch();
         if (input == 27) { //27 is esc key
           was_mon_list = 1;
 	  is_in_mon_list = 0;
-        } else if (input == KEY_UP && scroll < alive_ent) {
+        } else if (input == KEY_DOWN && scroll < alive_ent && alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent) {
           scroll++;
-        } else if (input == KEY_DOWN && scroll > 0) {
+        } else if (input == KEY_UP && scroll > 0) {
           scroll--;
         }	
       } else {
@@ -154,7 +155,7 @@ int main(int argc, char *argv[]) {
           endwin();
           break;
         } else if (player_next_move == 'm') {
-          is_in_mon_list = 2;
+          is_in_mon_list = 1;
         } else if (player_next_move == '>' || player_next_move == '<') {
           interact_stair(player_next_move, num_ent, dungeon_layout, num_rooms, pc);
         } else {
@@ -241,7 +242,7 @@ void update_monster_list(int num_ent) {
 }
 
 // makes a new dungeon (used for going upstairs and downstairs)
-void spawn_new_dungeon(int num_rooms, int num_mon) {
+void spawn_new_dungeon(int num_rooms, int *num_mon) {
   //clears the entities array
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {
@@ -254,9 +255,9 @@ void spawn_new_dungeon(int num_rooms, int num_mon) {
   create_paths(&num_rooms);
   set_layout();
   create_player();
-  create_entities(num_rooms, &num_mon);
+  create_entities(num_rooms, num_mon);
   set_hardness();
-  entities_heap = generate_entities_heap(num_mon, entities);
+  entities_heap = generate_entities_heap(*num_mon, entities);
 }
 
 void create_entities(int num_rooms, int *num_monsters) {
@@ -721,10 +722,12 @@ void print_monster_list(int alive_ent, int scroll) {
   int x_dir;
   char *y_string;
   char *x_string;
-  if (alive_ent > DUNGEON_ROW) {
-    alive_ent = DUNGEON_ROW;
+  if(alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent)
+  {
+    alive_ent = scroll + DUNGEON_ROW;
   }
-  for (int r = scroll; r < alive_ent; r++) {
+  
+  for (int r = scroll; r < alive_ent - 1; r++) {
     y_dir = pc.y_pos - monster_list[r].y_pos;
     x_dir = pc.x_pos - monster_list[r].x_pos;
     if (y_dir < 0) {
@@ -740,11 +743,11 @@ void print_monster_list(int alive_ent, int scroll) {
       x_string = "east";
     }
     if (y_dir == 0) {
-      mvprintw(r, 1, "%c, %d %s", monster_list[r].type, x_dir, x_string);
+      mvprintw(r - scroll, 1, "Mon #: %d %c, %d %s", r, monster_list[r].type, x_dir, x_string);
     } if (x_dir == 0) {
-      mvprintw(r, 1, "%c, %d %s", monster_list[r].type, y_dir, y_string);
+      mvprintw(r - scroll, 1, "Mon #: %d %c, %d %s", r, monster_list[r].type, y_dir, y_string);
     } else {
-      mvprintw(r, 1, "%c, %d %s and %d %s", monster_list[r].type, y_dir, y_string, x_dir, x_string); 
+      mvprintw(r - scroll, 1, "Mon #: %d %c, %d %s and %d %s", r, monster_list[r].type, y_dir, y_string, x_dir, x_string); 
     }
   }
   refresh();

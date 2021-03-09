@@ -88,7 +88,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 
 //dungeon.c
 void update_monster_list(int num_ent); //updates the list of alive monsters
-void spawn_new_dungeon(int num_rooms, int num_mon); //creates a new dungeon with new layout
+void spawn_new_dungeon(int num_rooms, int *num_mon); //creates a new dungeon with new layout
 void print_monster_list(int num_ent, int scroll); //prints full screen monster list
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
 void print_dungeon(int player_other_action);//Prints out the dungeon using ncurses

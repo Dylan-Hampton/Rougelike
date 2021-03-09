@@ -1,3 +1,4 @@
+3/09/21 DH: Added scroll functionality to monster list
 3/08/21 DH/BN/CB: Added reserve for line 0 for text messages, added monster display
 3/06/21 DH/BN: Added EPIC player win screen, added player_movement.c which contains both methods to move player, stopped monsters from moving onto stairs, added update_monster_list
 3/05/2021 BN: Added spawn_new_dungeon method to make a new dungeon without having to call a million methods. also implemented ncurses version print_dungeon, made the player movement fully functional, added stairs functionality (does not remember previous dungeons), added quit button
