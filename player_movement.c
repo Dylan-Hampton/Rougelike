@@ -3,8 +3,8 @@
 // goes up or down the stairs
 void interact_stair(char up_or_down, int num_ent, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL], int num_rooms, pc_t pc) {
   if ((up_or_down == '<' || up_or_down == '>') 
-       && (dungeon_layout[pc.y_pos][pc.x_pos] == TILE_UP
-       || dungeon_layout[pc.y_pos][pc.x_pos] == TILE_DOWN))
+      && (dungeon_layout[pc.y_pos][pc.x_pos] == TILE_UP
+        || dungeon_layout[pc.y_pos][pc.x_pos] == TILE_DOWN))
   {
     spawn_new_dungeon(num_rooms, num_ent - 1);
   }
@@ -16,7 +16,7 @@ void interact_stair(char up_or_down, int num_ent, int dungeon_layout[DUNGEON_ROW
 
 // moves the player
 int move_player(char direction, int num_ent, int *alive_ent, character_t *entities[DUNGEON_ROW][DUNGEON_COL],
-		int dungeon_display[DUNGEON_ROW][DUNGEON_COL], pc_t *pc, heap_t *entities_heap, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL]) {
+    int dungeon_display[DUNGEON_ROW][DUNGEON_COL], pc_t *pc, heap_t *entities_heap, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL]) {
   int has_killed_monster = 0;
   int x_direction = 0;
   int y_direction = 0;
@@ -64,7 +64,7 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
       y_direction = -1;
       break;
     default:
-//      printf("Error: wrong char passed into move_player: %c", direction);
+      //mvprintw(0, 1, "%c", direction);
       return -1;
       break;
   }
@@ -108,8 +108,8 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
   dungeon_display[pc->y_pos][pc->x_pos] = dungeon_layout[pc->y_pos][pc->x_pos];
   pc->y_pos = target_r;
   pc->x_pos = target_c;
-if (!has_killed_monster) {
-  return 0;
-}
+  if (!has_killed_monster) {
+    return 0;
+  }
   return 1;
 }

@@ -102,11 +102,13 @@ int main(int argc, char *argv[]) {
   generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
   // print_dist_map(dungeon_tunnel_map);
 
-  int pc_state = 0;
+  int pc_state = 1;
   num_ent = num_mon + 1;
   int alive_ent = num_ent;
   int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
   //entities_heap = generate_entities_heap(num_mon, entities);
+  int is_in_mon_list = 0, was_mon_list = 0;
+  int scroll = 0;
 
   while(1)
   {
@@ -122,25 +124,44 @@ int main(int argc, char *argv[]) {
     //   printf("\n");
     //  }
     // printf("\n\n");
-
+    if (is_in_mon_list == 0 && !was_mon_list) {
     generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
     generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
     pc_state = next_turn(dungeon_layout, dungeon_display,
-        dungeon_hardness, entities, dungeon_tunnel_map,
-        dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
+      	       dungeon_hardness, entities, dungeon_tunnel_map,
+	       dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
+    }
+
+    
     if(pc_state > 0 && num_ent > 1)
     {
-      print_dungeon(pc_other_action);
-      player_next_move = getch();
-      if (player_next_move == 'Q') {
-        endwin();
-        break;
-      } else if (player_next_move == '>' || player_next_move == '<') {
-        interact_stair(player_next_move, num_ent, dungeon_layout, num_rooms, pc);
+      if (is_in_mon_list) {
+        print_monster_list(num_ent, scroll);
+        int input = getch();
+        if (input == 27) {
+          was_mon_list = 1;
+	  is_in_mon_list = 0;
+        } else if (input == 72 && scroll < alive_ent) {
+          scroll++;
+        } else if (input == 80 && scroll > 0) {
+          scroll--;
+        }	
       } else {
-        pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+	was_mon_list = 0;
+        print_dungeon(pc_other_action);
+        player_next_move = getch();
+        if (player_next_move == 'Q') {
+          endwin();
+          break;
+        } else if (player_next_move == 'm') {
+          is_in_mon_list = 2;
+        } else if (player_next_move == '>' || player_next_move == '<') {
+          interact_stair(player_next_move, num_ent, dungeon_layout, num_rooms, pc);
+        } else {
+          pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+        }
+        update_monster_list(num_ent);
       }
-      update_monster_list(num_ent);
     } 
 
     else if(pc_state > 0 && alive_ent == 1)
@@ -690,6 +711,42 @@ void print_dungeon(int player_other_action) {
       mvwaddch(stdscr, r + 1, c, currentchar);
     }  
   }  
+  refresh();
+}
+
+// prints the monster list
+void print_monster_list(int alive_ent, int scroll) {
+  clear();
+  int y_dir;
+  int x_dir;
+  char *y_string;
+  char *x_string;
+  if (alive_ent > DUNGEON_ROW) {
+    alive_ent = DUNGEON_ROW;
+  }
+  for (int r = scroll; r < alive_ent; r++) {
+    y_dir = pc.y_pos - monster_list[r].y_pos;
+    x_dir = pc.x_pos - monster_list[r].x_pos;
+    if (y_dir < 0) {
+      y_string = "north";
+      y_dir *= -1;
+    } else {
+      y_string = "south";
+    }
+    if (x_dir < 0) {
+      x_string = "west";
+      x_dir *= -1;
+    } else {
+      x_string = "east";
+    }
+    if (y_dir == 0) {
+      mvprintw(r, 1, "%c, %d %s", monster_list[r].type, x_dir, x_string);
+    } if (x_dir == 0) {
+      mvprintw(r, 1, "%c, %d %s", monster_list[r].type, y_dir, y_string);
+    } else {
+      mvprintw(r, 1, "%c, %d %s and %d %s", monster_list[r].type, y_dir, y_string, x_dir, x_string); 
+    }
+  }
   refresh();
 }
 
