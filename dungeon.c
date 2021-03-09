@@ -83,7 +83,13 @@ int main(int argc, char *argv[]) {
   free(upstairs);
   free(downstairs);
   free(rooms);
-  
+ 
+  initscr();
+  echo();
+  raw();
+  curs_set(0);
+  keypad(stdscr, TRUE);
+ 
   // print dungeon_display
   print_dungeon();
   // printf("\n");
@@ -100,6 +106,7 @@ int main(int argc, char *argv[]) {
   num_ent = num_mon + 1;
   int alive_ent = num_ent;
   //entities_heap = generate_entities_heap(num_mon, entities);
+
   while(1)
   {
     /**
@@ -621,7 +628,7 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 //prints the dungeon with ncurses
 void print_dungeon() {
   //initializing the screen and turning on keyboard input
-  initscr();
+  clear();
   char currentchar;
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {

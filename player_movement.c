@@ -63,7 +63,8 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
       y_direction = -1;
       break;
     default:
-      printf("Error: wrong char passed into move_player: %c", direction);
+//      printf("Error: wrong char passed into move_player: %c", direction);
+      // mvprintw(23, 1, "Unknown key: %o", direction); 
       return -1;
       break;
   }
