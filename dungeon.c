@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
   int readErr = 0, writeErr = 0, num_upstair = 0, num_downstair = 0;
   num_rooms = 0;
   char player_next_move;
+  int alive_ent;
 
   //check for save or load switches
   if(argc > 1)
@@ -56,6 +57,7 @@ int main(int argc, char *argv[]) {
     set_layout();
     create_entities(num_rooms, &num_mon);
     num_ent = num_mon + 1;
+    alive_ent = num_ent;
     monster_list = malloc(num_ent * sizeof(npc_t));
   }
   //create our own dungeon
@@ -67,8 +69,9 @@ int main(int argc, char *argv[]) {
     num_upstair = 1;
     num_downstair = 1;
     //something with spawn new dungeon causes lag when large num mon
-    spawn_new_dungeon(num_rooms, &num_mon);
     num_ent = num_mon + 1;
+    alive_ent = num_ent;
+    spawn_new_dungeon(num_rooms, &num_mon, &alive_ent, &num_ent);
     monster_list = malloc(num_ent * sizeof(npc_t));
   }
   //save to file
@@ -86,7 +89,7 @@ int main(int argc, char *argv[]) {
   free(rooms);
 
   initscr();
-  echo();
+  noecho();
   raw();
   curs_set(0);
   keypad(stdscr, TRUE);
@@ -105,7 +108,6 @@ int main(int argc, char *argv[]) {
 
   int pc_state = 1;
   num_ent = num_mon + 1;
-  int alive_ent = num_ent;
   int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
   //entities_heap = generate_entities_heap(num_mon, entities);
   int is_in_mon_list = 0, was_mon_list = 0;
@@ -144,6 +146,7 @@ int main(int argc, char *argv[]) {
           break;
         } else if (input == 27) { //27 is esc key
           was_mon_list = 1;
+	  scroll = 0;
 	  is_in_mon_list = 0;
         } else if (input == KEY_DOWN && scroll < alive_ent && alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent) {
           scroll++;
@@ -160,7 +163,7 @@ int main(int argc, char *argv[]) {
         } else if (player_next_move == 'm') {
           is_in_mon_list = 1;
         } else if (player_next_move == '>' || player_next_move == '<') {
-          interact_stair(player_next_move, num_ent, dungeon_layout, num_rooms, pc);
+          interact_stair(player_next_move, &num_ent, &alive_ent, dungeon_layout, num_rooms, pc);
         } else {
           pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
           if (pc_other_action < 0) {
@@ -250,7 +253,7 @@ void update_monster_list(int num_ent) {
 }
 
 // makes a new dungeon (used for going upstairs and downstairs)
-void spawn_new_dungeon(int num_rooms, int *num_mon) {
+void spawn_new_dungeon(int num_rooms, int *num_mon, int *alive_ent, int *num_ent) {
   //clears the entities array
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {
@@ -264,6 +267,8 @@ void spawn_new_dungeon(int num_rooms, int *num_mon) {
   set_layout();
   create_player();
   create_entities(num_rooms, num_mon);
+  *num_ent = *num_mon + 1;
+  *alive_ent = *num_ent;
   set_hardness();
   entities_heap = generate_entities_heap(*num_mon, entities);
 }
@@ -730,6 +735,10 @@ void print_monster_list(int alive_ent, int scroll) {
   int x_dir;
   char *y_string;
   char *x_string;
+  char *adj[] = {"the normal", "the smart", "the stinky", "the shaggy", "the slow",
+               "the vile", "the giant", "the powerful", "the dumb", "the bloodthirsty",
+               "the dangerous", "the greedy", "the terrifying", "the tenacious", "the grotesque", "the savage"};
+  
   if(alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent)
   {
     alive_ent = scroll + DUNGEON_ROW;
@@ -751,11 +760,11 @@ void print_monster_list(int alive_ent, int scroll) {
       x_string = "east";
     }
     if (y_dir == 0) {
-      mvprintw(r - scroll, 1, "Mon #: %d %c, %d %s", r, monster_list[r].type, x_dir, x_string);
+      mvprintw(r - scroll, 1, "%3d| %16s %c, %2d %s", r, adj[monster_list[r].characteristics], monster_list[r].type, x_dir, x_string);
     } if (x_dir == 0) {
-      mvprintw(r - scroll, 1, "Mon #: %d %c, %d %s", r, monster_list[r].type, y_dir, y_string);
+      mvprintw(r - scroll, 1, "%3d| %16s %c, %2d %s", r, adj[monster_list[r].characteristics], monster_list[r].type, y_dir, y_string);
     } else {
-      mvprintw(r - scroll, 1, "Mon #: %d %c, %d %s and %d %s", r, monster_list[r].type, y_dir, y_string, x_dir, x_string); 
+      mvprintw(r - scroll, 1, "%3d| %16s %c, %2d %s and %2d %s", r, adj[monster_list[r].characteristics], monster_list[r].type, y_dir, y_string, x_dir, x_string); 
     }
   }
   refresh();

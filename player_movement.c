@@ -1,13 +1,13 @@
 #include "dungeon.h"
 
 // goes up or down the stairs
-void interact_stair(char up_or_down, int num_ent, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL], int num_rooms, pc_t pc) {
-  int num_mon = num_ent - 1;
+void interact_stair(char up_or_down, int *num_ent, int *alive_ent, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL], int num_rooms, pc_t pc) {
+  int num_mon = *num_ent - 1;
   if ((up_or_down == '<' || up_or_down == '>') 
       && (dungeon_layout[pc.y_pos][pc.x_pos] == TILE_UP
         || dungeon_layout[pc.y_pos][pc.x_pos] == TILE_DOWN))
   {
-    spawn_new_dungeon(num_rooms, &num_mon);
+    spawn_new_dungeon(num_rooms, &num_mon, alive_ent, num_ent);
   }
   else
   {

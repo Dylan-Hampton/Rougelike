@@ -88,7 +88,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 
 //dungeon.c
 void update_monster_list(int num_ent); //updates the list of alive monsters
-void spawn_new_dungeon(int num_rooms, int *num_mon); //creates a new dungeon with new layout
+void spawn_new_dungeon(int num_rooms, int *num_mon, int *alive_ent, int *num_ent); //creates a new dungeon with new layout
 void print_monster_list(int num_ent, int scroll); //prints full screen monster list
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
 void print_dungeon(int player_other_action);//Prints out the dungeon using ncurses
@@ -108,6 +108,6 @@ char get_monster_type(int n); // gets monster type based on number n
 //player_movement.c
 int move_player(char direction, int num_ent, int *alive_ent, character_t *entities[DUNGEON_ROW][DUNGEON_COL],
 		int dungeon_display[DUNGEON_ROW][DUNGEON_COL], pc_t *pc, heap_t *entities_heap, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL]);  // moves the player in direction
-void interact_stair(char up_or_down, int num_ent, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL], int num_rooms, pc_t pc); // goes up or down the stairs
+void interact_stair(char up_or_down, int *num_ent, int *alive_ent, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL], int num_rooms, pc_t pc); // goes up or down the stairs
 
 #endif
