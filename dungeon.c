@@ -18,71 +18,29 @@ npc_t *monster_list;
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
-  int load = 0, save = 0, num_mon = 10;//, fps = 4;
-  int readErr = 0, writeErr = 0, num_upstair = 0, num_downstair = 0;
+  int num_mon = 10;
   num_rooms = 0;
   char player_next_move;
   int alive_ent;
 
-  //check for save or load switches
   if(argc > 1)
   {
-    for(int i = 1; i < argc; i++) //should i just make this 2 if statements with 2 args?
+    for(int i = 1; i < argc; i++)
     {
-      if(!strcmp(argv[i], "--save") || !strcmp(argv[i], "-s"))  //strcmp returns 0 (which in an if statement means false) if matching
-      {	
-        save = 1;
-      }
-      if(!strcmp(argv[i], "--load") || !strcmp(argv[i], "-l"))
-      {
-        load = 1;
-      }
       if(!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "-m"))
       {
         num_mon = atoi(argv[++i]);
       }
-      /*
-         if(!strcmp(argv[i], "--fps") || !strcmp(argv[i], "-f"))
-         {
-         fps = atoi(argv[++i]);
-         }
-       */
     }
   }
 
-  //load from file
-  if (load == 1)
-  {
-    readErr = load_dungeon(&num_rooms, &num_upstair, &num_downstair); // load from file
-    set_layout();
-    create_entities(num_rooms, &num_mon);
-    num_ent = num_mon + 1;
-    alive_ent = num_ent;
-    monster_list = malloc(num_ent * sizeof(npc_t));
-  }
-  //create our own dungeon
-  else
-  {
-    upstairs = malloc(sizeof(stair_t)); //If we know we are creating our own dungeon we can malloc the stairs with size 1
-    downstairs = malloc(sizeof(stair_t));
-    rooms = malloc(MIN_ROOMS * sizeof(room_t));
-    num_upstair = 1;
-    num_downstair = 1;
-    //something with spawn new dungeon causes lag when large num mon
-    num_ent = num_mon + 1;
-    alive_ent = num_ent;
-    spawn_new_dungeon(num_rooms, &num_mon, &alive_ent, &num_ent);
-    monster_list = malloc(num_ent * sizeof(npc_t));
-  }
-  //save to file
-  if (save == 1)
-  { 
-    writeErr = save_dungeon(&num_rooms, &num_upstair, &num_downstair); // save dungeon to file
-  }
-  if(writeErr == -1 || readErr == -1) //error handling
-  {
-    return -1;
-  }
+  upstairs = malloc(sizeof(stair_t));
+  downstairs = malloc(sizeof(stair_t));
+  rooms = malloc(MIN_ROOMS * sizeof(room_t));
+  num_ent = num_mon + 1;
+  alive_ent = num_ent;
+  spawn_new_dungeon(num_rooms, &num_mon, &alive_ent, &num_ent);
+  monster_list = malloc(num_ent * sizeof(npc_t));
 
   free(upstairs);
   free(downstairs);
@@ -94,77 +52,65 @@ int main(int argc, char *argv[]) {
   curs_set(0);
   keypad(stdscr, TRUE);
 
-  // print dungeon_display
   print_dungeon(0);
-  // printf("\n");
-  // making dist maps and printing them
-  // non tunneling
   generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
-  // print_dist_map(dungeon_non_tunnel_map);
-  // printf("\n");
-  // tunneling
   generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
-  // print_dist_map(dungeon_tunnel_map);
 
   int pc_state = 1;
   num_ent = num_mon + 1;
   int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
-  //entities_heap = generate_entities_heap(num_mon, entities);
   int is_in_mon_list = 0, was_mon_list = 0;
   int scroll = 0;
 
   while(1)
   {
-    /**
-      moves next entity from queue from heap (besed on lowest turn), returns pc state
-      (0 == (monster turn) alive, -1 == player died, 1 == player turn (alive)) 
-     **/
-    // prints the tunneling map for debugging
-    //       for (int r = 0; r < DUNGEON_ROW; r++) {
-    //      for (int c = 0; c < DUNGEON_COL; c++) {
-    //     printf("%2d", dungeon_tunnel_map[r][c]);
-    //    }
-    //   printf("\n");
-    //  }
-    // printf("\n\n");
     if (is_in_mon_list == 0 && was_mon_list == 0) {
-    generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
-    generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
-    pc_state = next_turn(dungeon_layout, dungeon_display,
-      	       dungeon_hardness, entities, dungeon_tunnel_map,
-	       dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
+// sets the monster lists and takes all the turns until it is the player turn
+      generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
+      generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
+      pc_state = next_turn(dungeon_layout, dungeon_display,
+          dungeon_hardness, entities, dungeon_tunnel_map,
+          dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
     }
 
-    
+
     if((pc_state > 0 && num_ent > 1) || was_mon_list)
     {
       if (is_in_mon_list) {
         print_monster_list(alive_ent, scroll);
         int input = getch();
         if (input == 'Q') {
+//quits game
           endwin();
           break;
         } else if (input == 27) { //27 is esc key
+//exits monster list
           was_mon_list = 1;
-	  scroll = 0;
-	  is_in_mon_list = 0;
+          scroll = 0;
+          is_in_mon_list = 0;
         } else if (input == KEY_DOWN && scroll < alive_ent && alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent) {
+          //scrolls monster list up
           scroll++;
         } else if (input == KEY_UP && scroll > 0) {
+          //scrolls monster list down
           scroll--;
         }	
       } else {
-	      was_mon_list = 0;
+// if in regular player loop
+        was_mon_list = 0;
         print_dungeon(pc_other_action);
         player_next_move = getch();
         if (player_next_move == 'Q') {
           endwin();
           break;
         } else if (player_next_move == 'm') {
+//go to monster list
           is_in_mon_list = 1;
         } else if (player_next_move == '>' || player_next_move == '<') {
+//go up or down stairs
           interact_stair(player_next_move, &num_ent, &alive_ent, dungeon_layout, num_rooms, pc);
         } else {
+//move pc to specified place
           pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
           if (pc_other_action < 0) {
             was_mon_list = 1;
@@ -736,14 +682,14 @@ void print_monster_list(int alive_ent, int scroll) {
   char *y_string;
   char *x_string;
   char *adj[] = {"the normal", "the smart", "the stinky", "the shaggy", "the slow",
-               "the vile", "the giant", "the powerful", "the dumb", "the bloodthirsty",
-               "the dangerous", "the greedy", "the terrifying", "the tenacious", "the grotesque", "the savage"};
-  
+    "the vile", "the giant", "the powerful", "the dumb", "the bloodthirsty",
+    "the dangerous", "the greedy", "the terrifying", "the tenacious", "the grotesque", "the savage"};
+
   if(alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent)
   {
     alive_ent = scroll + DUNGEON_ROW;
   }
-  
+
   for (int r = scroll; r < alive_ent - 1; r++) {
     y_dir = pc.y_pos - monster_list[r].y_pos;
     x_dir = pc.x_pos - monster_list[r].x_pos;
@@ -836,169 +782,4 @@ void print_dungeon_terminal(){
     }
     printf("\n");
   }
-}
-
-int save_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
-{	
-  FILE *f;
-  char fileMarker[] = "RLG327-S2021";
-  uint32_t fileVersion = htobe32(0);
-  uint32_t fileSize = htobe32(1708 + ((*num_downstair) * 2) + ((*num_upstair) * 2) + ((*num_rooms) * 4));
-
-  char *home = getenv("HOME");
-  char *game_dir = ".rlg327";
-  char *save_file = "dungeon";
-  char *path = malloc((strlen(home) + strlen(game_dir) + strlen(save_file) + 2 + 1) * sizeof(char));
-  sprintf(path, "%s/%s/%s", home, game_dir, save_file);
-
-  if(!(f = fopen(path,"w")))
-  {
-    fprintf(stderr, "Failed to open file for writing\n");
-    return -1;
-  }
-
-  fwrite(fileMarker, sizeof(char), 12, f); //file-type marker
-  fwrite(&fileVersion, sizeof(uint32_t), 1, f); //32 bit uint for file version
-  fwrite(&fileSize, sizeof(uint32_t), 1, f); //size of file in bytes (num bytes)
-  fwrite(&pc.x_pos, sizeof(uint8_t), 1, f); //write player y pos
-  fwrite(&pc.y_pos, sizeof(uint8_t), 1, f); //write player x pos
-  fwrite(dungeon_hardness, sizeof(dungeon_hardness), 1, f); //writes dungeon hardness array
-  uint16_t nRoom = htobe16(*num_rooms);
-  fwrite(&nRoom, sizeof(nRoom), 1, f); //writes number of rooms
-
-  for (int i = 0; i < *num_rooms; i++) //writes all rooms x,y coord and dimensions
-  {
-    fwrite(&rooms[i].x_pos, sizeof(uint8_t), 1, f);
-    fwrite(&rooms[i].y_pos, sizeof(uint8_t), 1, f);
-    fwrite(&rooms[i].x_width, sizeof(uint8_t), 1, f);
-    fwrite(&rooms[i].y_height, sizeof(uint8_t), 1, f);
-  }
-
-  uint16_t nUp = htobe16(*num_upstair);
-  fwrite(&nUp, sizeof(uint16_t), 1, f);	//writes number of upstairs along with x,y pos
-  for (int i = 0; i < *num_upstair; i++)
-  {
-    uint8_t x_pos = upstairs[i].x_pos;
-    uint8_t y_pos = upstairs[i].y_pos;
-    fwrite(&x_pos, sizeof(uint8_t), 1, f);
-    fwrite(&y_pos, sizeof(uint8_t), 1, f);
-  }
-
-  uint16_t nDown = htobe16(*num_downstair);
-  fwrite(&nDown, sizeof(uint16_t), 1, f); //writes number of downstairs along with x,y pos
-  for (int i = 0; i < *num_downstair; i++)
-  {
-    uint8_t x_pos = downstairs[i].x_pos;
-    uint8_t y_pos = downstairs[i].y_pos;
-    fwrite(&x_pos, sizeof(uint8_t), 1, f);
-    fwrite(&y_pos, sizeof(uint8_t), 1, f);
-  }
-
-  fclose(f);
-  return 0;
-}
-
-int load_dungeon(int *num_rooms, int *num_upstair, int *num_downstair)
-{
-  FILE *f;
-  char fileMarker[12];
-  uint32_t version, size;
-  uint16_t num_up, num_down, nRooms;
-
-  char *home = getenv("HOME");
-  char *game_dir = ".rlg327";
-  char *save_file = "dungeon";
-  char *path = malloc((strlen(home) + strlen(game_dir) + strlen(save_file) + 2 + 1) * sizeof(char));
-  sprintf(path, "%s/%s/%s", home, game_dir, save_file);
-
-  if(!(f = fopen(path,"r")))
-  {
-    fprintf(stderr, "Failed to open file for reading\n");
-    return -1;
-  }
-
-
-  fread(fileMarker, sizeof(char), 12, f); //gets file-type marker
-  fread(&version, sizeof(uint32_t), 1, f); //gets file version
-  version = be32toh(version);
-  fread(&size, sizeof(uint32_t), 1, f); //gets size of file in bytes (num bytes)
-  size = be32toh(size);
-  fread(&pc.x_pos, sizeof(uint8_t), 1, f); //gets player y pos
-  fread(&pc.y_pos, sizeof(uint8_t), 1, f); //gets player x pos
-  fread(dungeon_hardness, sizeof(dungeon_hardness), 1, f); //gets dungeon hardness array
-  fread(&nRooms, sizeof(uint16_t), 1, f); //gets number of rooms
-  *num_rooms = be16toh(nRooms);
-
-  rooms = malloc((*num_rooms) * sizeof(room_t)); //allocate room size
-  for (int i = 0; i < *num_rooms; i++) //gets rooms x,y pos and dims
-  {
-    fread(&rooms[i].x_pos, sizeof(uint8_t), 1, f);
-    fread(&rooms[i].y_pos, sizeof(uint8_t), 1, f);
-    fread(&rooms[i].x_width, sizeof(uint8_t), 1, f);
-    fread(&rooms[i].y_height, sizeof(uint8_t), 1, f);
-  }
-
-  fread(&num_up, sizeof(uint16_t), 1, f); //gets number of upstairs
-  *num_upstair = be16toh(num_up);
-  upstairs = malloc((*num_upstair) * sizeof(stair_t));
-  for (int i = 0; i < *num_upstair; i++)  //gets x,y pos for upstairs
-  {
-    fread(&upstairs[i].x_pos, sizeof(uint8_t), 1, f);
-    fread(&upstairs[i].y_pos, sizeof(uint8_t), 1, f);
-    upstairs[i].direction = 1;
-  }
-
-
-  fread(&num_down, sizeof(uint16_t), 1, f);  //gets number of downstairs
-  *num_downstair = be16toh(num_down);
-  downstairs = malloc((*num_downstair) * sizeof(stair_t));
-  for (int i = 0; i < *num_downstair; i++)  //gets x,y pos for downstairs
-  {
-    fread(&downstairs[i].x_pos, sizeof(uint8_t), 1, f);
-    fread(&downstairs[i].y_pos, sizeof(uint8_t), 1, f);
-    downstairs[i].direction = 0;
-  }
-
-  fclose(f);
-
-  //setting loaded dungeon to be printed
-
-  for(int r = 0; r < DUNGEON_ROW; r++) //Place corridors (any extra will be overwritten)
-  {
-    for(int c = 0; c < DUNGEON_COL; c++)
-    {
-      if(dungeon_hardness[r][c] == 0)
-      {
-        dungeon_display[r][c] = 2;
-      }
-    }
-  }
-
-  for(int i = 0; i < *num_rooms; i++) //Place rooms
-  {
-    int x = rooms[i].x_pos;
-    int y = rooms[i].y_pos;
-    int x_dim = rooms[i].x_width;
-    int y_dim = rooms[i].y_height;   
-    for(int r = y; r < y + y_dim; r++)
-    {
-      for(int c = x; c < x + x_dim; c++)
-      {
-        dungeon_display[r][c] = 1;
-      }
-    }
-  }
-
-  dungeon_display[pc.y_pos][pc.x_pos] = 5; //Place player
-  for(int i = 0; i < *num_downstair; i++) //Place downstairs
-  {
-    dungeon_display[downstairs[i].y_pos][downstairs[i].x_pos] = 3;
-  }
-
-  for(int i = 0; i < *num_upstair; i++) //Place upstairs
-  {
-    dungeon_display[upstairs[i].y_pos][upstairs[i].x_pos] = 4;
-  }
-
-  return 0;
 }

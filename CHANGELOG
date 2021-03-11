@@ -1,3 +1,4 @@
+3/11/21 BN: Deleted save and load functions, and added comments to the main game loop
 3/09/21 BN/DH: Updated scroll for monster list and added prefixes to the monster names, fixed bug where number of monsters in monster list didn't match alive monsters. //1.05 assignment done
 3/09/21 BN: Added so that if there is an invalid input, monsters will not move, made it so it updates the amount of data allocated for monster_list in update_monster_list
 3/09/21 DH: Added scroll functionality to monster list
