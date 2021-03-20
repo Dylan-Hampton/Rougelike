@@ -34,13 +34,13 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  upstairs = malloc(sizeof(stair_t));
-  downstairs = malloc(sizeof(stair_t));
-  rooms = malloc(MIN_ROOMS * sizeof(room_t));
+  upstairs = (stair_t *) malloc(sizeof(stair_t));
+  downstairs = (stair_t *) malloc(sizeof(stair_t));
+  rooms = (room_t *) malloc(MIN_ROOMS * sizeof(room_t));
   num_ent = num_mon + 1;
   alive_ent = num_ent;
   spawn_new_dungeon(num_rooms, &num_mon, &alive_ent, &num_ent);
-  monster_list = malloc(num_ent * sizeof(npc_t));
+  monster_list = (npc_t *) malloc(num_ent * sizeof(npc_t));
 
   free(upstairs);
   free(downstairs);
@@ -175,12 +175,12 @@ int main(int argc, char *argv[]) {
 
 void update_monster_list(int num_ent) {
   free(monster_list);
-  monster_list = malloc(num_ent * sizeof(npc_t));
+  monster_list = (npc_t *) malloc(num_ent * sizeof(npc_t));
   character_t *temp[num_ent - 1];
   int index = 0;
   for(int i = 0; i < num_ent - 1; i++)
   {
-    temp[i] = heap_remove_min(&entities_heap);	  
+    temp[i] = (character_t *) heap_remove_min(&entities_heap);	  
 
     if(temp[i]->is_alive && !(temp[i]->is_pc))
     {
@@ -222,7 +222,7 @@ void spawn_new_dungeon(int num_rooms, int *num_mon, int *alive_ent, int *num_ent
 void create_entities(int num_rooms, int *num_monsters) {
   int seq = 0;
   //intializing player and placing into entities
-  character_t *player = malloc(sizeof(character_t));
+  character_t *player = (character_t *) malloc(sizeof(character_t));
   player->sn = seq++;
   player->x_pos = pc.x_pos;
   player->y_pos = pc.y_pos;
@@ -264,12 +264,12 @@ void create_entities(int num_rooms, int *num_monsters) {
         {
           //initializing monster
           dungeon_display[y][x] = 10 + mon_type;
-          npc_t *npc = malloc(sizeof(npc_t));
+          npc_t *npc = (npc_t *) malloc(sizeof(npc_t));
           npc->x_pos = x;
           npc->y_pos = y;
           npc->characteristics = mon_type;
           npc->type = get_monster_type(mon_type);
-          character_t *monster = malloc(sizeof(character_t));
+          character_t *monster = (character_t *) malloc(sizeof(character_t));
           monster->sn = seq++;
           monster->x_pos = x;
           monster->y_pos = y;
@@ -679,9 +679,9 @@ void print_monster_list(int alive_ent, int scroll) {
   clear();
   int y_dir;
   int x_dir;
-  char *y_string;
-  char *x_string;
-  char *adj[] = {"the normal", "the smart", "the stinky", "the shaggy", "the slow",
+  const char *y_string;
+  const char *x_string;
+  char adj[][18] = {"the normal", "the smart", "the stinky", "the shaggy", "the slow",
     "the vile", "the giant", "the powerful", "the dumb", "the bloodthirsty",
     "the dangerous", "the greedy", "the terrifying", "the tenacious", "the grotesque", "the savage"};
 
@@ -694,16 +694,16 @@ void print_monster_list(int alive_ent, int scroll) {
     y_dir = pc.y_pos - monster_list[r].y_pos;
     x_dir = pc.x_pos - monster_list[r].x_pos;
     if (y_dir < 0) {
-      y_string = "north";
+      y_string = "south";
       y_dir *= -1;
     } else {
-      y_string = "south";
+      y_string = "north";
     }
     if (x_dir < 0) {
-      x_string = "west";
+      x_string = "east";
       x_dir *= -1;
     } else {
-      x_string = "east";
+      x_string = "west";
     }
     if (y_dir == 0) {
       mvprintw(r - scroll, 1, "%3d| %16s %c, %2d %s", r, adj[monster_list[r].characteristics], monster_list[r].type, x_dir, x_string);

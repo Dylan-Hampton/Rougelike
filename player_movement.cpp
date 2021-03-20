@@ -89,7 +89,7 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
       //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
       for(int i = 0; i < num_ent - 1; i++)
       {
-        temp[i] = heap_remove_min(entities_heap);	  
+        temp[i] = (character_t *) heap_remove_min(entities_heap);	  
 
         if(temp[i]->x_pos == target_c && temp[i]->y_pos == target_r)
         {

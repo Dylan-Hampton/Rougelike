@@ -57,7 +57,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
 {
   //removing minimum turn character and updating turn, if monster then moves based on given characteristics
   int pc_alive = 1;
-  character_t *c = heap_remove_min(h);
+  character_t *c = (character_t *)heap_remove_min(h);
   c->turn += (1000 / c->speed);
   if(c->is_alive == 1 && !(c->is_pc))
   {
@@ -187,7 +187,7 @@ int next_turn(int dungeon_layout[DUNGEON_ROW][DUNGEON_COL],
       //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
       for(int i = 0; i < num_ent - 1; i++)
       {
-        temp[i] = heap_remove_min(h);	  
+        temp[i] = (character_t *)heap_remove_min(h);	  
 
         if(temp[i]->x_pos == min_x && temp[i]->y_pos == min_y)
         {
@@ -311,7 +311,7 @@ void generate_nonTunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_C
     }
   }
 
-  while ((p = heap_remove_min(&h)))
+  while ((p = (monster_path_t *) heap_remove_min(&h)))
   {
     p->hn = NULL;
     if (p->pos[r] > 0 && p->pos[r] < DUNGEON_ROW - 1 &&
@@ -468,7 +468,7 @@ void generate_tunnel_dist_map(uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL]
     }
   }
 
-  while ((p = heap_remove_min(&h)))
+  while ((p = (monster_path_t *) heap_remove_min(&h)))
   {
     p->hn = NULL;
     if (p->pos[r] > 0 && p->pos[r] < DUNGEON_ROW - 1 &&

@@ -95,8 +95,8 @@ void print_dungeon(int player_other_action);//Prints out the dungeon using ncurs
 void print_dungeon_terminal(); //Prints out the dungeon using terminal output
 void set_layout(); //sets the layout of dungeon
 void set_dungeon(); //Initializes all cells to rock(space)
-void create_rooms(); //Creates 6 random rooms of random but minimum size
-void create_paths(); //Creates paths between each room
+void create_rooms(int *num_rooms); //Creates 6 random rooms of random but minimum size
+void create_paths(int *num_rooms); //Creates paths between each room
 void create_stairs(); //Creates one stair that goes up and one that goes down
 void create_player(); //Creates the player and places them in the highest room corner
 void set_hardness(); //sets the hardness of the rocks in the dungeon
