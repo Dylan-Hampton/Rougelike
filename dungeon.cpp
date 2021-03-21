@@ -4,6 +4,7 @@
 int dungeon_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for tunneling monsters
 int dungeon_non_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for non-tunneling monsters
 int dungeon_layout[DUNGEON_ROW][DUNGEON_COL];
+int dungeon_fow[DUNGEON_ROW][DUNGEON_COL];
 int dungeon_display[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for outputting text 
 uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for hardness level  hardness goes from 0 - 255 (0 meaning room or corridor, 255 meaning immutable)
 room_t *rooms;
@@ -204,6 +205,7 @@ void spawn_new_dungeon(int num_rooms, int *num_mon, int *alive_ent, int *num_ent
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {
       entities[r][c] = NULL;
+      dungeon_fow[r][c] = TILE_ROCK;
     }
   }
   set_dungeon();
@@ -217,6 +219,15 @@ void spawn_new_dungeon(int num_rooms, int *num_mon, int *alive_ent, int *num_ent
   *alive_ent = *num_ent;
   set_hardness();
   entities_heap = generate_entities_heap(*num_mon, entities);
+}
+
+// updates the fog of war
+void update_fow() {
+  for (int r = -1; r <= 1; r++) {
+    for (int c = -1; c <= 1; c++) {
+      dungeon_fow[pc.y_pos + r][pc.x_pos + c] = dungeon_display[pc.y_pos + r][pc.x_pos + c];
+    }
+  }
 }
 
 void create_entities(int num_rooms, int *num_monsters) {
@@ -611,6 +622,7 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 void print_dungeon(int player_other_action) {
   //initializing the screen and turning on keyboard input
   clear();
+  update_fow();
   if (player_other_action == -1) {
     mvprintw(0, 1, "There is a wall in the way!"); 
   } else if (player_other_action > 0) {
@@ -619,7 +631,7 @@ void print_dungeon(int player_other_action) {
   char currentchar;
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {
-      switch(dungeon_display[r][c])
+      switch(dungeon_fow[r][c])
       {
         case TILE_ROCK:
           currentchar = ' ';
