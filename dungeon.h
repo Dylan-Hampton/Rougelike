@@ -92,7 +92,7 @@ void spawn_new_dungeon(int num_rooms, int *num_mon, int *alive_ent, int *num_ent
 void print_monster_list(int num_ent, int scroll); //prints full screen monster list
 void update_fow(); 
 void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]); //Prints out the distance map
-void print_dungeon(int player_other_action);//Prints out the dungeon using ncurses
+void print_dungeon(int player_other_action, int toggle);//Prints out the dungeon using ncurses
 void print_dungeon_terminal(); //Prints out the dungeon using terminal output
 void set_layout(); //sets the layout of dungeon
 void set_dungeon(); //Initializes all cells to rock(space)

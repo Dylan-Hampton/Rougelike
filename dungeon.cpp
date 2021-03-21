@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   curs_set(0);
   keypad(stdscr, TRUE);
 
-  print_dungeon(0);
+  //print_dungeon(0);
   generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
   generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
 
@@ -62,11 +62,12 @@ int main(int argc, char *argv[]) {
   int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
   int is_in_mon_list = 0, was_mon_list = 0;
   int scroll = 0;
+  int fow_toggle = 0;
 
   while(1)
   {
     if (is_in_mon_list == 0 && was_mon_list == 0) {
-// sets the monster lists and takes all the turns until it is the player turn
+      // sets the monster lists and takes all the turns until it is the player turn
       generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
       generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
       pc_state = next_turn(dungeon_layout, dungeon_display,
@@ -81,11 +82,11 @@ int main(int argc, char *argv[]) {
         print_monster_list(alive_ent, scroll);
         int input = getch();
         if (input == 'Q') {
-//quits game
+          //quits game
           endwin();
           break;
         } else if (input == 27) { //27 is esc key
-//exits monster list
+          //exits monster list
           was_mon_list = 1;
           scroll = 0;
           is_in_mon_list = 0;
@@ -97,21 +98,23 @@ int main(int argc, char *argv[]) {
           scroll--;
         }	
       } else {
-// if in regular player loop
+        // if in regular player loop
         was_mon_list = 0;
-        print_dungeon(pc_other_action);
+        print_dungeon(pc_other_action, fow_toggle);
         player_next_move = getch();
-        if (player_next_move == 'Q') {
+        if (player_next_move == 'f' || player_next_move == 'F') {
+          fow_toggle = (fow_toggle + 1) % 2;
+        } else if (player_next_move == 'Q') {
           endwin();
           break;
         } else if (player_next_move == 'm') {
-//go to monster list
+          //go to monster list
           is_in_mon_list = 1;
         } else if (player_next_move == '>' || player_next_move == '<') {
-//go up or down stairs
+          //go up or down stairs
           interact_stair(player_next_move, &num_ent, &alive_ent, dungeon_layout, num_rooms, pc);
         } else {
-//move pc to specified place
+          //move pc to specified place
           pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
           if (pc_other_action < 0) {
             was_mon_list = 1;
@@ -621,10 +624,20 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 }
 
 //prints the dungeon with ncurses
-void print_dungeon(int player_other_action) {
+void print_dungeon(int player_other_action, int toggle) {
   //initializing the screen and turning on keyboard input
   clear();
   update_fow();
+  int dungeon_temp[DUNGEON_ROW][DUNGEON_COL];
+  for (int r = 0; r < DUNGEON_ROW; r++) {
+    for (int c = 0; c < DUNGEON_COL; c++) {
+      if (toggle) {
+        dungeon_temp[r][c] = dungeon_display[r][c];
+      } else {
+        dungeon_temp[r][c] = dungeon_fow[r][c];
+      }
+    }
+  }
   if (player_other_action == -1) {
     mvprintw(0, 1, "There is a wall in the way!"); 
   } else if (player_other_action > 0) {
@@ -633,7 +646,7 @@ void print_dungeon(int player_other_action) {
   char currentchar;
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {
-      switch(dungeon_fow[r][c])
+      switch(dungeon_temp[r][c])
       {
         case TILE_ROCK:
           currentchar = ' ';
