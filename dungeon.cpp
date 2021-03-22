@@ -63,10 +63,11 @@ int main(int argc, char *argv[]) {
   int is_in_mon_list = 0, was_mon_list = 0;
   int scroll = 0;
   int fow_toggle = 0;
+  int is_teleporting = 0;
 
   while(1)
   {
-    if (is_in_mon_list == 0 && was_mon_list == 0) {
+    if (is_in_mon_list == 0 && was_mon_list == 0 && is_teleporting == 0) {
       // sets the monster lists and takes all the turns until it is the player turn
       generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
       generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
@@ -97,12 +98,15 @@ int main(int argc, char *argv[]) {
           //scrolls monster list down
           scroll--;
         }	
-      } else {
+      } else if (!is_teleporting) {
         // if in regular player loop
         was_mon_list = 0;
         print_dungeon(pc_other_action, fow_toggle);
         player_next_move = getch();
-        if (player_next_move == 'f' || player_next_move == 'F') {
+	if(player_next_move == 'g') {
+	  //Teleport (goto)
+	  is_teleporting = 1;
+        } else if (player_next_move == 'f' || player_next_move == 'F') {
           fow_toggle = (fow_toggle + 1) % 2;
         } else if (player_next_move == 'Q') {
           endwin();
@@ -121,7 +125,26 @@ int main(int argc, char *argv[]) {
           }
         }
         update_monster_list(num_ent);
+      } else {
+	//Teleporting
+	player_next_move = getch();
+	if(player_next_move == 'g'){
+	  is_teleporting = 0;
+	}
+	else if(player_next_move == 'r'){
+	  //Random position
+	  int y_rand_teleport = rand() % 21;
+	  int x_rand_teleport = rand() % 80;
+	  entities[y_rand_teleport][x_rand_teleport] = entities[pc.y_pos][pc.x_pos];
+          entities[pc.y_pos][pc.x_pos] = NULL;
+          dungeon_display[y_rand_teleport][x_rand_teleport] = dungeon_display[pc.y_pos][pc.x_pos];
+          dungeon_display[pc.y_pos][pc.x_pos] = dungeon_layout[pc.y_pos][pc.x_pos];
+	  pc.x_pos = x_rand_teleport;
+	  pc.y_pos = y_rand_teleport;
+	  is_teleporting = 0;
+	}
       }
+      
     } 
 
     else if(pc_state > 0 && alive_ent == 1)
