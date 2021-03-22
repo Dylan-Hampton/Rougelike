@@ -1,3 +1,4 @@
+3/21/21 CB: Started the teleportation mechanic, just the random.
 3/20/21 BN/DH: Changed all .c files (except for heap.c) to .cpp, fixed any errors, added fog of war, added f key, which shows the entire screen
 3/11/21 BN: Deleted save and load functions, and added comments to the main game loop
 3/09/21 BN/DH: Updated scroll for monster list and added prefixes to the monster names, fixed bug where number of monsters in monster list didn't match alive monsters. //1.05 assignment done
