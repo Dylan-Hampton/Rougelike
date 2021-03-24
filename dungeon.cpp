@@ -5,6 +5,7 @@ int dungeon_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for tunneling 
 int dungeon_non_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for non-tunneling monsters
 int dungeon_layout[DUNGEON_ROW][DUNGEON_COL];
 int dungeon_fow[DUNGEON_ROW][DUNGEON_COL];
+int dungeon_star[DUNGEON_ROW][DUNGEON_COL];
 int dungeon_display[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for outputting text 
 uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for hardness level  hardness goes from 0 - 255 (0 meaning room or corridor, 255 meaning immutable)
 room_t *rooms;
@@ -63,11 +64,11 @@ int main(int argc, char *argv[]) {
   int is_in_mon_list = 0, was_mon_list = 0;
   int scroll = 0;
   int fow_toggle = 0;
-  int is_teleporting = 0;
+  update_fow();
 
   while(1)
   {
-    if (is_in_mon_list == 0 && was_mon_list == 0 && is_teleporting == 0) {
+    if (is_in_mon_list == 0 && was_mon_list == 0) {
       // sets the monster lists and takes all the turns until it is the player turn
       generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
       generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
@@ -98,14 +99,13 @@ int main(int argc, char *argv[]) {
           //scrolls monster list down
           scroll--;
         }	
-      } else if (!is_teleporting) {
+      } else {
         // if in regular player loop
         was_mon_list = 0;
         print_dungeon(pc_other_action, fow_toggle);
         player_next_move = getch();
-	if(player_next_move == 'g') {
-	  //Teleport (goto)
-	  is_teleporting = 1;
+        if(player_next_move == 'g') {
+          star_movement(&alive_ent);
         } else if (player_next_move == 'f' || player_next_move == 'F') {
           fow_toggle = (fow_toggle + 1) % 2;
         } else if (player_next_move == 'Q') {
@@ -120,84 +120,162 @@ int main(int argc, char *argv[]) {
         } else {
           //move pc to specified place
           pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+          update_fow();
           if (pc_other_action < 0) {
             was_mon_list = 1;
           }
         }
         update_monster_list(num_ent);
-      } else {
-	//Teleporting
-	player_next_move = getch();
-	if(player_next_move == 'g'){
-	  is_teleporting = 0;
-	}
-	else if(player_next_move == 'r'){
-	  //Random position
-	  int y_rand_teleport = rand() % 21;
-	  int x_rand_teleport = rand() % 80;
-	  entities[y_rand_teleport][x_rand_teleport] = entities[pc.y_pos][pc.x_pos];
-          entities[pc.y_pos][pc.x_pos] = NULL;
-          dungeon_display[y_rand_teleport][x_rand_teleport] = dungeon_display[pc.y_pos][pc.x_pos];
-          dungeon_display[pc.y_pos][pc.x_pos] = dungeon_layout[pc.y_pos][pc.x_pos];
-	  pc.x_pos = x_rand_teleport;
-	  pc.y_pos = y_rand_teleport;
-	  is_teleporting = 0;
-	}
-      }
-      
-    } 
+        /*
+           } else {
+        //Teleporting
+        player_next_move = getch();
+        if(player_next_move == 'g'){
+        is_teleporting = 0;
+        }
+        else if(player_next_move == 'r'){
+        //Random position
+        int y_rand_teleport = rand() % 21;
+        int x_rand_teleport = rand() % 80;
+        entities[y_rand_teleport][x_rand_teleport] = entities[pc.y_pos][pc.x_pos];
+        entities[pc.y_pos][pc.x_pos] = NULL;
+        dungeon_display[y_rand_teleport][x_rand_teleport] = dungeon_display[pc.y_pos][pc.x_pos];
+        dungeon_display[pc.y_pos][pc.x_pos] = dungeon_layout[pc.y_pos][pc.x_pos];
+        pc.x_pos = x_rand_teleport;
+        pc.y_pos = y_rand_teleport;
+        is_teleporting = 0;
+        }
+        }
 
-    else if(pc_state > 0 && alive_ent == 1)
-    {
-      endwin();
-      print_dungeon_terminal();
-      printf("                      _.--.    .--._\n");
-      printf("                    .'  .'      '.  '.\n");
-      printf("                   ;  .'    /\\    '.  ;\n");
-      printf("                   ;  '._,-/  \\-,_.`  ;\n");
-      printf("                   \\  ,`  / /\\ \\  `,  /\n");
-      printf("                    \\/    \\/  \\/    \\/\n");
-      printf("                    ,=_    \\/\\/    _=,\n");
-      printf("                    |  '_   \\/   _'  |\n");
-      printf("                    |_   ''-..-''   _|\n");
-      printf("                    | '-.        .-' |\n");
-      printf("                    |    '\\    /'    |\n");
-      printf("                    |      |  |      |\n");
-      printf("            ___     |      |  |      |     ___\n");
-      printf("        _,-',  ',   '_     |  |     _'   ,'  ,'-,_\n");
-      printf("      _(  \\  \\   \\'=--'-.  |  |  .-'--='/   /  /  )_\n");
-      printf("    ,'  \\  \\  \\   \\      '-'--'-'      /   /  /  /  '.\n");
-      printf("   !     \\  \\  \\   \\                  /   /  /  /     !\n");
-      printf("   :      \\  \\  \\   \\                /   /  /  /      :\n");
-      printf("\n                       PLAYER WINS!\n");
-      break;
-    }
-    else if(pc_state < 0)
-    {
-      endwin();
-      print_dungeon_terminal();
-      printf("                            ,-.\n");
-      printf("       ___,---.__          /'|`\\          __,---,___\n");
-      printf("    ,-'    \\`    `-.____,-'  |  `-.____,-'    //    `-.\n");
-      printf("  ,'        |           ~'\\     /`~           |        `.\n");
-      printf(" /      ___//              `. ,'          ,  , \\___      \\\n");
-      printf("|    ,-'   `-.__   _         |        ,    __,-'   `-.    |\n");
-      printf("|   /          /\\_  `   .    |    ,      _/\\          \\   |\n");
-      printf("\\  |           \\ \\`-.___ \\   |   / ___,-'/ /           |  /\n");
-      printf(" \\  \\           | `._   `\\\\  |  //'   _,' |           /  /\n");
-      printf("  `-.\\         /'  _ `---'' , . ``---' _  `\\         /,-'\n");
-      printf("     ``       /     \\    ,='/ \\`=.    /     \\       ''\n");
-      printf("             |__   /|\\_,--.,-.--,--._/|\\   __|\n");
-      printf("             /  `./  \\\\`\\ |  |  | /,//' \\,'  \\\n");
-      printf("            /   /     ||--+--|--+-/-|     \\   \\\n");
-      printf("           |   |     /'\\_\\_\\ | /_/_/`\\     |   |\n");
-      printf("            \\   \\__, \\_     `~'     _/ .__/   /\n");
-      printf("             `-._,-'   `-._______,-'   `-._,-'\n");
-      printf("\n                       MONSTERS WIN!\n");
-      break;
-    }
+         */
+    }    
+  } 
+
+  else if(pc_state > 0 && alive_ent == 1)
+  {
+    endwin();
+    print_dungeon_terminal();
+    printf("                      _.--.    .--._\n");
+    printf("                    .'  .'      '.  '.\n");
+    printf("                   ;  .'    /\\    '.  ;\n");
+    printf("                   ;  '._,-/  \\-,_.`  ;\n");
+    printf("                   \\  ,`  / /\\ \\  `,  /\n");
+    printf("                    \\/    \\/  \\/    \\/\n");
+    printf("                    ,=_    \\/\\/    _=,\n");
+    printf("                    |  '_   \\/   _'  |\n");
+    printf("                    |_   ''-..-''   _|\n");
+    printf("                    | '-.        .-' |\n");
+    printf("                    |    '\\    /'    |\n");
+    printf("                    |      |  |      |\n");
+    printf("            ___     |      |  |      |     ___\n");
+    printf("        _,-',  ',   '_     |  |     _'   ,'  ,'-,_\n");
+    printf("      _(  \\  \\   \\'=--'-.  |  |  .-'--='/   /  /  )_\n");
+    printf("    ,'  \\  \\  \\   \\      '-'--'-'      /   /  /  /  '.\n");
+    printf("   !     \\  \\  \\   \\                  /   /  /  /     !\n");
+    printf("   :      \\  \\  \\   \\                /   /  /  /      :\n");
+    printf("\n                       PLAYER WINS!\n");
+    break;
   }
-  return 0;
+  else if(pc_state < 0)
+  {
+    endwin();
+    print_dungeon_terminal();
+    printf("                            ,-.\n");
+    printf("       ___,---.__          /'|`\\          __,---,___\n");
+    printf("    ,-'    \\`    `-.____,-'  |  `-.____,-'    //    `-.\n");
+    printf("  ,'        |           ~'\\     /`~           |        `.\n");
+    printf(" /      ___//              `. ,'          ,  , \\___      \\\n");
+    printf("|    ,-'   `-.__   _         |        ,    __,-'   `-.    |\n");
+    printf("|   /          /\\_  `   .    |    ,      _/\\          \\   |\n");
+    printf("\\  |           \\ \\`-.___ \\   |   / ___,-'/ /           |  /\n");
+    printf(" \\  \\           | `._   `\\\\  |  //'   _,' |           /  /\n");
+    printf("  `-.\\         /'  _ `---'' , . ``---' _  `\\         /,-'\n");
+    printf("     ``       /     \\    ,='/ \\`=.    /     \\       ''\n");
+    printf("             |__   /|\\_,--.,-.--,--._/|\\   __|\n");
+    printf("             /  `./  \\\\`\\ |  |  | /,//' \\,'  \\\n");
+    printf("            /   /     ||--+--|--+-/-|     \\   \\\n");
+    printf("           |   |     /'\\_\\_\\ | /_/_/`\\     |   |\n");
+    printf("            \\   \\__, \\_     `~'     _/ .__/   /\n");
+    printf("             `-._,-'   `-._______,-'   `-._,-'\n");
+    printf("\n                       MONSTERS WIN!\n");
+    break;
+  }
+}
+return 0;
+}
+
+void star_movement(int *alive_ent) {
+  int star_row = pc.y_pos;
+  int star_col = pc.x_pos;
+  print_dungeon(0, 1);
+  mvwaddch(stdscr, star_row + 1, star_col, '*');
+  int x_direction = 0;
+  int y_direction = 0;
+  char direction = getch();
+  while (direction != 'g') {
+    switch (direction) {
+      case '1':// down left
+      case 'b':
+        x_direction = -1;
+        y_direction = 1;
+        break;
+      case '2':// down
+      case 'j':
+        y_direction = 1;
+        x_direction = 0;
+        break;
+      case '3':// down right
+      case 'n':
+        x_direction = 1;
+        y_direction = 1;
+        break;
+      case '4':// left
+      case 'h':
+        x_direction = -1;
+        y_direction = 0;
+        break;
+      case '6':// right
+      case 'l':
+        y_direction = 0;
+        x_direction = 1;
+        break;
+      case '7':// up left
+      case 'y':
+        x_direction = -1;
+        y_direction = -1;
+        break;
+      case '8':// up
+      case 'k':
+        x_direction = 0;
+        y_direction = -1;
+        break;
+      case '9':// up right
+      case 'u':
+        x_direction = 1;
+        y_direction = -1;
+        break;
+      default:
+        break;
+    }
+    if (star_row + y_direction >= 0 && star_col + x_direction >= 0 && star_row + y_direction < DUNGEON_ROW && star_col + x_direction < DUNGEON_COL) {
+      star_row += y_direction;
+      star_col += x_direction;
+      print_dungeon(0, 1);
+    } else {
+      print_dungeon(-1, 1);
+    }  
+    mvwaddch(stdscr, star_row + 1, star_col, '*');
+    direction = getch();
+  }
+  if (star_row + y_direction >= 0 && star_col + x_direction >= 0 && star_row + y_direction < DUNGEON_ROW && star_col + x_direction < DUNGEON_COL) {
+    dungeon_display[star_row][star_col] = dungeon_layout[star_row][star_col];
+    dungeon_fow[star_row][star_col] = dungeon_layout[star_row][star_col];
+    teleport_player(star_row, star_col, num_ent, alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+    update_fow();
+    print_dungeon(0, 0);
+  } else {
+    print_dungeon(-1, 1);
+  }
 }
 
 void update_monster_list(int num_ent) {
@@ -650,7 +728,6 @@ void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
 void print_dungeon(int player_other_action, int toggle) {
   //initializing the screen and turning on keyboard input
   clear();
-  update_fow();
   int dungeon_temp[DUNGEON_ROW][DUNGEON_COL];
   for (int r = 0; r < DUNGEON_ROW; r++) {
     for (int c = 0; c < DUNGEON_COL; c++) {
@@ -672,7 +749,7 @@ void print_dungeon(int player_other_action, int toggle) {
       switch(dungeon_temp[r][c])
       {
         case TILE_ROCK:
-          currentchar = ' ';
+          currentchar = '[';
           break;
         case TILE_FLOOR:
           currentchar = '.';

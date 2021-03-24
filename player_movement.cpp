@@ -15,6 +15,45 @@ void interact_stair(char up_or_down, int *num_ent, int *alive_ent, int dungeon_l
   }
 }
 
+int teleport_player(int row, int col, int num_ent, int *alive_ent, character_t *entities[DUNGEON_ROW][DUNGEON_COL],
+    int dungeon_display[DUNGEON_ROW][DUNGEON_COL], pc_t *pc, heap_t *entities_heap, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL]) {
+  int target_r = row;
+  int target_c = col;
+  if (!(target_r >= 0 && target_c >= 0 && target_r < DUNGEON_ROW && target_c < DUNGEON_COL)) {
+    return -1;
+  }
+  int target_tile = dungeon_display[target_r][target_c];
+  //kills the monster if there is a monster in target tile
+  if (target_tile >= 10) {
+    if(entities[target_r][target_c] != NULL)
+    {
+      character_t *temp[num_ent - 1];
+      //pulls out whole heap and checks for murdered entity, if so set is_alive = 0
+      for(int i = 0; i < num_ent - 1; i++)
+      {
+        temp[i] = (character_t *) heap_remove_min(entities_heap);	  
+
+        if(temp[i]->x_pos == target_c && temp[i]->y_pos == target_r)
+        {
+          temp[i]->is_alive = 0;
+        }
+      } //reinserts temp into heap
+      for(int i = 0; i < num_ent - 1; i++)
+      {
+        heap_insert(entities_heap, temp[i]);
+      }
+      (*alive_ent)--;
+    }
+  }
+  entities[target_r][target_c] = entities[pc->y_pos][pc->x_pos];
+  entities[pc->y_pos][pc->x_pos] = NULL;
+  dungeon_display[target_r][target_c] = dungeon_display[pc->y_pos][pc->x_pos];
+  dungeon_display[pc->y_pos][pc->x_pos] = dungeon_layout[pc->y_pos][pc->x_pos];
+  pc->y_pos = target_r;
+  pc->x_pos = target_c;
+  return 0;
+}
+
 // moves the player
 int move_player(char direction, int num_ent, int *alive_ent, character_t *entities[DUNGEON_ROW][DUNGEON_COL],
     int dungeon_display[DUNGEON_ROW][DUNGEON_COL], pc_t *pc, heap_t *entities_heap, int dungeon_layout[DUNGEON_ROW][DUNGEON_COL]) {
@@ -75,6 +114,9 @@ int move_player(char direction, int num_ent, int *alive_ent, character_t *entiti
   //checks if movement is valid
   int target_r = pc->y_pos + y_direction;
   int target_c = pc->x_pos + x_direction;
+  if (!(target_r >= 0 && target_c >= 0 && target_r < DUNGEON_ROW && target_c < DUNGEON_COL)) {
+    return -1;
+  }
   int target_tile = dungeon_display[target_r][target_c];
   if (target_tile == TILE_ROCK) {
     //printf("player movement invalid: %c\n", direction);
