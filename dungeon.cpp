@@ -340,8 +340,8 @@ void spawn_new_dungeon(int num_rooms, int *num_mon, int *alive_ent, int *num_ent
 
 // updates the fog of war
 void update_fow() {
-  for (int r = -3; r <= 3; r++) {
-    for (int c = -3; c <= 3; c++) {
+  for (int r = -DUNGEON_FOW; r <= DUNGEON_FOW; r++) {
+    for (int c = -DUNGEON_FOW; c <= DUNGEON_FOW; c++) {
       if (pc.y_pos + r >= 0 && pc.x_pos + c >= 0 && pc.y_pos + r < DUNGEON_ROW && pc.x_pos + c < DUNGEON_COL) {
         dungeon_fow[pc.y_pos + r][pc.x_pos + c] = dungeon_display[pc.y_pos + r][pc.x_pos + c];
       }

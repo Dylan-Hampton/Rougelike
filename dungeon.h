@@ -15,6 +15,7 @@
 //Constants
 #define DUNGEON_ROW 21
 #define DUNGEON_COL 80
+#define DUNGEON_FOW 5
 #define TILE_ROCK   0
 #define TILE_FLOOR  1
 #define TILE_CORR   2
