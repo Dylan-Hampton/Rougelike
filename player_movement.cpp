@@ -23,14 +23,17 @@ int teleport_player(int row, int col, int num_ent, int *alive_ent, character_t *
     return -1;
   }
   int target_tile = dungeon_display[target_r][target_c];
+  if (target_tile == TILE_PC) {
+    return 0;
+  }
   // kills the player if he teleports onto a monster
   if (target_tile >= 10) {
     return 1;
   }
   entities[target_r][target_c] = entities[pc->y_pos][pc->x_pos];
   entities[pc->y_pos][pc->x_pos] = NULL;
-  dungeon_fow[pc->y_pos][pc->x_pos] = dungeon_layout[pc->y_pos][pc->x_pos];
   dungeon_display[target_r][target_c] = dungeon_display[pc->y_pos][pc->x_pos];
+  dungeon_fow[pc->y_pos][pc->x_pos] = dungeon_layout[pc->y_pos][pc->x_pos];
   dungeon_display[pc->y_pos][pc->x_pos] = dungeon_layout[pc->y_pos][pc->x_pos];
   pc->y_pos = target_r;
   pc->x_pos = target_c;

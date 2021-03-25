@@ -280,8 +280,8 @@ int star_movement(int *alive_ent) {
     direction = getch();
   }
   if (star_row + y_direction >= 0 && star_col + x_direction >= 0 && star_row + y_direction < DUNGEON_ROW && star_col + x_direction < DUNGEON_COL) {
-    dungeon_display[star_row][star_col] = dungeon_layout[star_row][star_col];
-    dungeon_fow[star_row][star_col] = dungeon_layout[star_row][star_col];
+    //dungeon_display[star_row][star_col] = dungeon_layout[star_row][star_col];
+    //dungeon_fow[star_row][star_col] = dungeon_layout[star_row][star_col];
     output = teleport_player(star_row, star_col, num_ent, alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout, dungeon_fow);
     update_fow();
     print_dungeon(0, 0);
