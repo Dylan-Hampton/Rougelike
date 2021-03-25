@@ -30,26 +30,30 @@
 #define BIT_ERAT    0x8 
 
 //Struct defs
-typedef struct room {
+class room_t {
+  public:
   int x_pos;
   int y_pos;
   int x_width;
   int y_height;
-} room_t;
+};
 
-typedef struct pc {
+class pc_t {
+  public:
   int x_pos;
   int y_pos;
-} pc_t;
+};
 
-typedef struct npc {
+class npc_t {
+  public:
   int x_pos;
   int y_pos;
   int characteristics;
   char type;
-} npc_t;
+};
 
-typedef struct character {
+class character_t {
+  public:
   int sn;
   int x_pos;
   int y_pos;
@@ -59,19 +63,21 @@ typedef struct character {
   pc_t *pc;
   int is_pc;
   int is_alive;
-} character_t;
+};
 
-typedef struct stair {
+class stair_t {
+  public:
   int x_pos;
   int y_pos;
   int direction;
-} stair_t;
+};
 
-typedef struct monster_path {
+class monster_path_t {
+  public:
   heap_node_t *hn; //heap node pointer
   int pos[2]; //r,c
   int cost; 
-} monster_path_t;
+};
 
 //Prototypes
 //path_finding.c
