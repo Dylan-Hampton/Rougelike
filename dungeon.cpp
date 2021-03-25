@@ -105,7 +105,11 @@ int main(int argc, char *argv[]) {
         print_dungeon(pc_other_action, fow_toggle);
         player_next_move = getch();
         if(player_next_move == 'g') {
-          star_movement(&alive_ent);
+          int star = star_movement(&alive_ent);
+          if (star) {
+            endwin();
+            break;
+          }
         } else if (player_next_move == 'f' || player_next_move == 'F') {
           fow_toggle = (fow_toggle + 1) % 2;
         } else if (player_next_move == 'Q') {
@@ -204,7 +208,8 @@ int main(int argc, char *argv[]) {
 return 0;
 }
 
-void star_movement(int *alive_ent) {
+int star_movement(int *alive_ent) {
+  int output = 0;
   int star_row = pc.y_pos;
   int star_col = pc.x_pos;
   print_dungeon(0, 1);
@@ -212,7 +217,14 @@ void star_movement(int *alive_ent) {
   int x_direction = 0;
   int y_direction = 0;
   char direction = getch();
+  int random_x = (rand() % (DUNGEON_COL - 2)) + 1;
+  int random_y = (rand() % (DUNGEON_ROW - 2)) + 1;
   while (direction != 'g') {
+    if (direction == 'r') {
+      star_row = random_y;
+      star_col = random_x;
+      break;
+    }
     switch (direction) {
       case '1':// down left
       case 'b':
@@ -270,12 +282,13 @@ void star_movement(int *alive_ent) {
   if (star_row + y_direction >= 0 && star_col + x_direction >= 0 && star_row + y_direction < DUNGEON_ROW && star_col + x_direction < DUNGEON_COL) {
     dungeon_display[star_row][star_col] = dungeon_layout[star_row][star_col];
     dungeon_fow[star_row][star_col] = dungeon_layout[star_row][star_col];
-    teleport_player(star_row, star_col, num_ent, alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+    output = teleport_player(star_row, star_col, num_ent, alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout, dungeon_fow);
     update_fow();
     print_dungeon(0, 0);
   } else {
     print_dungeon(-1, 1);
   }
+  return output;
 }
 
 void update_monster_list(int num_ent) {
@@ -749,7 +762,7 @@ void print_dungeon(int player_other_action, int toggle) {
       switch(dungeon_temp[r][c])
       {
         case TILE_ROCK:
-          currentchar = '[';
+          currentchar = ' ';
           break;
         case TILE_FLOOR:
           currentchar = '.';
@@ -788,7 +801,7 @@ void print_dungeon(int player_other_action, int toggle) {
         case 23:
         case 24:
         case 25:
-          currentchar = get_monster_type(dungeon_display[r][c] - 10);
+          currentchar = get_monster_type(dungeon_temp[r][c] - 10);
           break;
 
         default:

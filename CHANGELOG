@@ -1,3 +1,4 @@
+3/23/21 BN/DH/CB: finished everything for 1.06 except for changing all the structs to classes
 3/22/21 BN/DH/CB: Worked on telport mechanic, finished targeting mode, sometimes Z's show up in the fog of war mode and we don't know why, also need to fix teleporting onto a monster
 3/21/21 CB: Started the teleportation mechanic, just the random.
 3/20/21 BN/DH: Changed all .c files (except for heap.c) to .cpp, fixed any errors, added fog of war, added f key, which shows the entire screen
