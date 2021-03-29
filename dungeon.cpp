@@ -1,5 +1,7 @@
 #include "dungeon.h"
 
+using namespace std;
+
 //Globals
 int dungeon_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for tunneling monsters
 int dungeon_non_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for non-tunneling monsters
@@ -22,7 +24,7 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
   int num_mon = 10;
   num_rooms = 0;
-  char player_next_move;
+  //char player_next_move;
   int alive_ent;
 
   if(argc > 1)
@@ -47,17 +49,19 @@ int main(int argc, char *argv[]) {
   free(upstairs);
   free(downstairs);
   free(rooms);
-
+  /*
   initscr();
   noecho();
   raw();
   curs_set(0);
   keypad(stdscr, TRUE);
+  */
 
   //print_dungeon(0);
   generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
   generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
 
+  /*
   int pc_state = 1;
   num_ent = num_mon + 1;
   int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
@@ -66,6 +70,8 @@ int main(int argc, char *argv[]) {
   int fow_toggle = 0;
   update_fow();
 
+  
+  
   while(1)
   {
     if (is_in_mon_list == 0 && was_mon_list == 0) {
@@ -130,7 +136,7 @@ int main(int argc, char *argv[]) {
           }
         }
         update_monster_list(num_ent);
-        /*
+        
            } else {
         //Teleporting
         player_next_move = getch();
@@ -151,7 +157,6 @@ int main(int argc, char *argv[]) {
         }
         }
 
-         */
     }    
   } 
 
@@ -205,6 +210,10 @@ int main(int argc, char *argv[]) {
     break;
   }
 }
+  */
+
+
+parse_monsters();
 return 0;
 }
 
@@ -922,4 +931,100 @@ void print_dungeon_terminal(){
     }
     printf("\n");
   }
+}
+
+void parse_monsters()
+{
+  string filePath = strcat(getenv("HOME"),"/.rlg327/monster_desc.txt");
+  ifstream file(filePath);
+  string temp;
+  //int characteristics;
+  string name;
+  //char desc[78];
+  //int color;
+  //int speed[3];
+  int hp[3];
+  //int dam[3];
+  char symb;
+  int rarity;
+  getline(file, temp);
+  
+  if(temp == "RLG327 MONSTER DESCRIPTION 1")
+  {
+    while(file.peek() != EOF) //goes until end of file
+    {
+      getline(file, temp);
+      if(temp == "BEGIN MONSTER")
+      {
+	while(temp != "END")
+	{
+	  getline(file, temp);
+	  
+	  if(temp.length() > 4 && temp.substr(0,4) == "NAME")
+	  {
+	    name = temp.substr(5);
+	    cout << name << endl;
+	  }
+	  if(temp.length() > 4 && temp.substr(0,4) == "SYMB")
+	  {
+	    symb = temp[5];
+	    cout << symb << endl;
+	  }
+	  if(temp.length() > 4 && temp.substr(0,4) == "RRTY")
+	  {
+	    rarity = atoi(temp.substr(5).c_str());
+	    cout << rarity << endl;
+	  }
+	  if(temp.length() > 2 && temp.substr(0,2) == "HP")
+	  {
+	    parse_dice(temp.substr(3), hp);
+	    cout << hp[0] << hp[1] << hp[2] << endl;
+	  }
+	  /*
+	  if(temp.length() > 3 && temp.substr(0,3) == "DAM")
+	  {
+	    cout << temp.substr(0,3) << temp.substr(4) << endl;
+	  }
+	  if(temp.length() > 5 && temp.substr(0,5) == "COLOR")
+	  {
+	    cout << temp.substr(0,5) << temp.substr(6) << endl;
+	  }
+	  if(temp.length() > 4 && temp.substr(0,4) == "ABIL")
+	  {
+	    cout << temp.substr(0,4) << temp.substr(5) << endl;
+	  }
+	  */
+	  /*
+	  if(temp.length() > 4 && temp.substr(0,4) == "DESC")
+	  {
+	    cout << temp.substr(0,4) << temp.substr(5) << endl;
+	  }
+	  */
+   	}
+      }
+    }
+  }
+  else
+  {
+    cout << "Error: Invalid File Format" << endl;
+  }
+}
+
+void parse_dice(std::string temp, int dice[3])
+{
+  int i = 0, j = 0;
+  while(temp.substr(i, i+1) != "+")
+  {
+    i++;
+    cout << "i: " << i << temp.substr(i, i+1) << endl;
+  }
+  dice[0] = atoi(temp.substr(0, i).c_str());
+  j = i;
+  while(temp.substr(j, j+1) != "d")
+  {
+    j++;
+    cout << "j: " << j << endl;
+  }
+  dice[1] = atoi(temp.substr(i, j).c_str());
+  dice[2] = atoi(temp.substr(j).c_str());
 }

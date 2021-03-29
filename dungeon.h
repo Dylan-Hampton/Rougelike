@@ -11,6 +11,9 @@
 #include <endian.h>
 #include <limits.h>
 #include <ncurses.h>
+#include <iostream>
+#include <fstream> //ifstream and ofstream
+#include <string>
 
 //Constants
 #define DUNGEON_ROW 21
@@ -50,7 +53,16 @@ class npc_t {
   int x_pos;
   int y_pos;
   int characteristics;
-  char type;
+  char type; //symbol
+  char *name;
+  char desc[78];
+  int color;
+  int hp;
+  int ad;
+  int rarity;
+  int base;
+  int dice;
+  int sides;
 };
 
 class character_t {
@@ -111,6 +123,8 @@ void create_player(); //Creates the player and places them in the highest room c
 void set_hardness(); //sets the hardness of the rocks in the dungeon
 void create_entities(int num_rooms, int *num_monsters); // creates the monsters and player
 char get_monster_type(int n); // gets monster type based on number n
+void parse_monsters();
+void parse_dice(std::string temp, int dice[3]);
 
 //player_movement.c
 int teleport_player(int row, int col, int num_ent, int *alive_ent, character_t *entities[DUNGEON_ROW][DUNGEON_COL],
