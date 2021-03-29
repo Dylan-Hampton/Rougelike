@@ -941,10 +941,10 @@ void parse_monsters()
   //int characteristics;
   string name;
   //char desc[78];
-  //int color;
-  //int speed[3];
+  int color[8];
+  int speed[3];
   int hp[3];
-  //int dam[3];
+  int dam[3];
   char symb;
   int rarity;
   getline(file, temp);
@@ -980,20 +980,66 @@ void parse_monsters()
 	    parse_dice(temp.substr(3), hp);
 	    cout << hp[0] << hp[1] << hp[2] << endl;
 	  }
-	  /*
+	  
 	  if(temp.length() > 3 && temp.substr(0,3) == "DAM")
 	  {
+	    parse_dice(temp.substr(4), dam);
 	    cout << temp.substr(0,3) << temp.substr(4) << endl;
+	  }
+	  if(temp.length() > 5 && temp.substr(0,5) == "SPEED")
+	  {
+	    parse_dice(temp.substr(6), speed);
+	    cout << temp.substr(0,5) << temp.substr(6) << endl;
 	  }
 	  if(temp.length() > 5 && temp.substr(0,5) == "COLOR")
 	  {
+	    int i = 6;
+	    int lasti = i;
+	    int colorIndex = 0;
+	    int length = temp.length();
+	    while (i < length) {
+	      while(temp[i] != ' ' && i < length){
+		i++;
+	      }
+
+	      if(temp.substr(lasti, i - lasti) == "BLACK"){
+		color[colorIndex++] = 0;
+	      }
+	      else if(temp.substr(lasti, i - lasti) == "RED"){
+		color[colorIndex++] = 1;
+	      }
+	      else if(temp.substr(lasti, i - lasti) == "GREEN"){
+		color[colorIndex++] = 2;
+	      }
+	      else if(temp.substr(lasti, i - lasti) == "YELLOW"){
+		color[colorIndex++] = 3;
+	      }
+	      else if(temp.substr(lasti, i - lasti) == "BLUE"){
+		color[colorIndex++] = 4;
+	      }
+	      else if(temp.substr(lasti, i - lasti) == "MAGENTA"){
+		color[colorIndex++] = 5;
+	      }
+	      else if(temp.substr(lasti, i - lasti) == "CYAN"){
+		color[colorIndex++] = 6;
+	      }
+	      else if(temp.substr(lasti, i - lasti) == "WHITE"){
+		color[colorIndex++] = 7;
+	      }
+	      else {
+		color[colorIndex++] = -1;
+	      }
+	      cout << color[colorIndex - 1] << endl;
+	      i++;
+	      lasti = i;
+	    }
 	    cout << temp.substr(0,5) << temp.substr(6) << endl;
 	  }
 	  if(temp.length() > 4 && temp.substr(0,4) == "ABIL")
 	  {
 	    cout << temp.substr(0,4) << temp.substr(5) << endl;
 	  }
-	  */
+       
 	  /*
 	  if(temp.length() > 4 && temp.substr(0,4) == "DESC")
 	  {
@@ -1013,18 +1059,20 @@ void parse_monsters()
 void parse_dice(std::string temp, int dice[3])
 {
   int i = 0, j = 0;
-  while(temp.substr(i, i+1) != "+")
+  while(temp[i] != '+')
   {
     i++;
-    cout << "i: " << i << temp.substr(i, i+1) << endl;
   }
-  dice[0] = atoi(temp.substr(0, i).c_str());
+  i++;
+  dice[0] = atoi(temp.substr(0, i - 1).c_str());
   j = i;
-  while(temp.substr(j, j+1) != "d")
+  while(temp[j] != 'd')
   {
     j++;
-    cout << "j: " << j << endl;
   }
-  dice[1] = atoi(temp.substr(i, j).c_str());
+  j++;
+
+  dice[1] = atoi(temp.substr(i, j - i - 1).c_str());
   dice[2] = atoi(temp.substr(j).c_str());
+
 }
