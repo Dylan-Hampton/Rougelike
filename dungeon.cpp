@@ -19,6 +19,8 @@ heap_t entities_heap;
 int num_ent;
 int num_rooms;
 npc_t *monster_list;
+// stores all monster descs
+vector<npc_desc_t> monster_descriptions;
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -214,6 +216,8 @@ else if(pc_state < 0)
 
 
 parse_monsters();
+print_monster_desc();
+
 return 0;
 }
 
@@ -960,11 +964,16 @@ void parse_monsters()
       getline(file, temp);
       if(temp == "BEGIN MONSTER")
       {
-        cout << "\n" << endl;
+        //cout << "\n" << endl;
         // resets all attributes after each new desc 
         ability = 0;
         desc = "";
         counter = 0;
+	for(int i = 0; i < 8; i++)
+	{
+	  color[i] = -1;
+	}
+	
         while(temp != "END")
         {
           getline(file, temp);
@@ -973,42 +982,42 @@ void parse_monsters()
           {
             counter++;
             name = temp.substr(5);
-            cout << name << endl;
+            //cout << name << endl;
           }
           // gets the monster symbol
           if(temp.length() > 4 && temp.substr(0,4) == "SYMB") 
           {
             counter++;
             symb = temp[5];
-            cout << symb << endl;
+            //cout << symb << endl;
           }
           // gets the monster rarity
           if(temp.length() > 4 && temp.substr(0,4) == "RRTY") 
           {
             counter++;
             rarity = atoi(temp.substr(5).c_str());
-            cout << rarity << endl;
+            //cout << rarity << endl;
           }
           // uses parse_dice to get monster hp
           if(temp.length() > 2 && temp.substr(0,2) == "HP")
           {
             counter++;
             parse_dice(temp.substr(3), hp);
-            cout << hp[0] << hp[1] << hp[2] << endl;
+            //cout << hp[0] << hp[1] << hp[2] << endl;
           }
           // uses parse_dice to get monster damage
           if(temp.length() > 3 && temp.substr(0,3) == "DAM")
           {
             counter++;
             parse_dice(temp.substr(4), dam);
-            cout << temp.substr(0,3) << temp.substr(4) << endl;
+            //cout << temp.substr(0,3) << temp.substr(4) << endl;
           }
           // uses parse_dice to get monster speed
           if(temp.length() > 5 && temp.substr(0,5) == "SPEED") 
           {
             counter++;
             parse_dice(temp.substr(6), speed);
-            cout << temp.substr(0,5) << temp.substr(6) << endl;
+            //cout << temp.substr(0,5) << temp.substr(6) << endl;
           }
           // parses through line word by word, and sets to equivalent integer
           if(temp.length() > 5 && temp.substr(0,5) == "COLOR")
@@ -1054,7 +1063,7 @@ void parse_monsters()
               i++;
               lasti = i;
             }
-            cout << temp.substr(0,5) << temp.substr(6) << endl;
+            //cout << temp.substr(0,5) << temp.substr(6) << endl;
           }
           // parses through line word by word, and sets ability to appropriate binary number
           if(temp.length() > 4 && temp.substr(0,4) == "ABIL")
@@ -1070,31 +1079,31 @@ void parse_monsters()
               }
 
               if(temp.substr(lasti, i - lasti) == "SMART"){
-                ability = ability|1;
+                ability = ability|BIT_SMART;
               }
               else if(temp.substr(lasti, i - lasti) == "TELE"){
-                ability = ability|2;
+                ability = ability|BIT_TELE;
               }
               else if(temp.substr(lasti, i - lasti) == "TUNNEL"){
-                ability = ability|4;
+                ability = ability|BIT_TUN;
               }
               else if(temp.substr(lasti, i - lasti) == "ERRATIC"){
-                ability = ability|8;
+                ability = ability|BIT_ERAT;
               }
               else if(temp.substr(lasti, i - lasti) == "PASS"){
-                ability = ability|16;
+                ability = ability|BIT_PASS;
               }
               else if(temp.substr(lasti, i - lasti) == "PICKUP"){
-                ability = ability|32;
+                ability = ability|BIT_PICKUP;
               }
               else if(temp.substr(lasti, i - lasti) == "DESTROY"){
-                ability = ability|64;
+                ability = ability|BIT_DESTROY;
               }
               else if(temp.substr(lasti, i - lasti) == "UNIQ"){
-                ability = ability|128;
+                ability = ability|BIT_UNIQ;
               }
               else if(temp.substr(lasti, i - lasti) == "BOSS"){
-                ability = ability|256;
+                ability = ability|BIT_BOSS;
               }
               else {
                 ability = -1;
@@ -1102,7 +1111,7 @@ void parse_monsters()
               i++;
               lasti = i;
             }
-            cout << temp.substr(0,4) << temp.substr(5) << endl;
+            //cout << temp.substr(0,4) << temp.substr(5) << endl;
           }
           // reads the next lines(77 chars max) until it encounters a singular ".", appends into desc string
           if(temp == "DESC")
@@ -1114,14 +1123,43 @@ void parse_monsters()
               getline(file, temp);
             }
             desc = desc.substr(1);
-            cout << desc << endl;
+            //cout << desc << endl;
           }
         }
         // if all characteristics are not set
         if (counter != 9) {
           cout << "Error: Invalid Monster Description" << endl;
         } else {
-          //make monster and save in array
+          npc_desc_t m;
+	  dice_t speed_dice;
+	  speed_dice.base = speed[0];
+	  speed_dice.dice = speed[1];
+	  speed_dice.sides = speed[2];
+	  dice_t hp_dice;
+	  hp_dice.base = hp[0];
+	  hp_dice.dice = hp[1];
+	  hp_dice.sides = hp[2];
+	  dice_t dam_dice;
+	  dam_dice.base = dam[0];
+	  dam_dice.dice = dam[1];
+	  dam_dice.sides = dam[2];
+	  
+	  m.name = name;
+	  m.desc = desc;
+	  for(int i = 0; i < 8; i++)
+	  {
+	    m.color[i] = color[i];
+	  }
+	  
+	  m.speed = speed_dice;
+	  m.hp = hp_dice;
+	  m.dam = dam_dice;
+	  m.ability = ability;
+	  m.symb = symb;
+	  m.rarity = rarity;
+
+	  monster_descriptions.push_back(m);
+	  //cout << monster_descriptions.size() << endl;
         }
       }
     }
@@ -1150,5 +1188,100 @@ void parse_dice(std::string temp, int dice[3])
 
   dice[1] = atoi(temp.substr(i, j - i - 1).c_str());
   dice[2] = atoi(temp.substr(j).c_str());
+}
 
+void print_monster_desc()
+{
+  int size = monster_descriptions.size();
+  cout << "\n" << endl;
+  for(int i = 0; i < size; i++)
+  {
+    cout << monster_descriptions[i].name << endl;
+    cout << monster_descriptions[i].desc << endl;
+   
+    cout << monster_descriptions[i].symb << endl;
+
+    cout << get_colors(i) << endl;
+    
+    cout << monster_descriptions[i].speed.base << "+"
+	 << monster_descriptions[i].speed.dice << "d"
+	 << monster_descriptions[i].speed.sides << endl;
+
+    cout << get_abilities(i) << endl;
+    
+    cout << monster_descriptions[i].hp.base << "+"
+	 << monster_descriptions[i].hp.dice << "d"
+	 << monster_descriptions[i].hp.sides << endl;
+    
+    cout << monster_descriptions[i].dam.base << "+"
+	 << monster_descriptions[i].dam.dice << "d"
+	 << monster_descriptions[i].dam.sides << endl;
+    
+    cout << monster_descriptions[i].rarity << endl;
+    cout << "\n" << endl;
+  }
+}
+
+std::string get_colors(int i)
+{
+  string ret;
+  for(int j = 0; j < 8; j++)
+  {
+    switch(monster_descriptions[i].color[j])
+      {
+      case 0:
+        ret += "BLACK ";
+	  break;
+      case 1:
+        ret += "RED ";
+	  break;
+      case 2:
+	ret += "GREEN ";
+	  break;
+      case 3:
+	ret += "YELLOW ";
+	  break;
+      case 4:
+	ret += "BLUE ";
+	  break;
+      case 5:
+	ret += "MAGENTA ";
+	  break;
+      case 6:
+	ret += "CYAN ";
+	  break;
+      case 7:
+	ret += "WHITE ";
+	  break;
+      default:
+	break;
+    }
+  }
+  return ret;
+}
+
+std::string get_abilities(int i)
+{
+  string ret;
+  //cout << monster_descriptions[i].ability << endl;
+  if(monster_descriptions[i].ability & BIT_SMART){
+    ret += "SMART ";
+  } if(monster_descriptions[i].ability & BIT_TELE){
+    ret += "TELE ";
+  } if(monster_descriptions[i].ability & BIT_TUN){
+    ret += "TUNNEL ";
+  } if(monster_descriptions[i].ability & BIT_ERAT){
+    ret += "ERRATIC ";
+  } if(monster_descriptions[i].ability & BIT_PASS){
+    ret += "PASS ";
+  } if(monster_descriptions[i].ability & BIT_PICKUP){
+    ret += "PICKUP ";
+  } if(monster_descriptions[i].ability & BIT_DESTROY){
+    ret += "DESTROY ";
+  } if(monster_descriptions[i].ability & BIT_UNIQ){
+    ret += "UNIQUE ";
+  } if(monster_descriptions[i].ability & BIT_BOSS){
+    ret += "BOSS ";
+  }
+  return ret;
 }

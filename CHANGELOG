@@ -1,3 +1,4 @@
+3/30/21 BN/DH: Finished abilities, desc, added dice and description classes, added print function for parser //1.07 assignment done 
 3/29/21 BN/DH/CB: Finished color, damage, hp, and speed. Still need to do description
 3/24/21 BN: fixed the bug where you could teleport onto yourself
 3/23/21 BN/DH/CB: finished everything for 1.06 (fixed fog of war, fixed teleporting onto a monster, implemented random teleportation) //1.06 assignment done

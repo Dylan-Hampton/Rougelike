@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream> //ifstream and ofstream
 #include <string>
+#include <vector>
 
 //Constants
 #define DUNGEON_ROW 21
@@ -31,7 +32,12 @@
 #define BIT_SMART   0x1 
 #define BIT_TELE    0x2 
 #define BIT_TUN     0x4 
-#define BIT_ERAT    0x8 
+#define BIT_ERAT    0x8
+#define BIT_PASS    0x10 
+#define BIT_PICKUP  0x20 
+#define BIT_DESTROY 0x40
+#define BIT_UNIQ    0x80
+#define BIT_BOSS    0x100
 
 //Struct defs
 class room_t {
@@ -48,21 +54,32 @@ class pc_t {
   int y_pos;
 };
 
+class dice_t {
+  public:
+    int base;
+    int dice;
+    int sides;
+};
+
+class npc_desc_t {
+  public:
+    std::string name;
+    std::string desc;
+    int color[8];
+    dice_t speed;
+    dice_t hp;
+    dice_t dam;
+    int ability;
+    char symb;
+    int rarity;
+};
+  
 class npc_t {
   public:
   int x_pos;
   int y_pos;
   int characteristics;
   char type; //symbol
-  char *name;
-  char desc[78];
-  int color;
-  int hp;
-  int ad;
-  int rarity;
-  int base;
-  int dice;
-  int sides;
 };
 
 class character_t {
@@ -125,6 +142,10 @@ void create_entities(int num_rooms, int *num_monsters); // creates the monsters 
 char get_monster_type(int n); // gets monster type based on number n
 void parse_monsters();
 void parse_dice(std::string temp, int dice[3]);
+std::string get_colors(int i);
+std::string get_abilities(int i);
+void print_monster_desc();
+
 
 //player_movement.c
 int teleport_player(int row, int col, int num_ent, int *alive_ent, character_t *entities[DUNGEON_ROW][DUNGEON_COL],
