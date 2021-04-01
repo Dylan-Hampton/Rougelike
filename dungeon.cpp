@@ -21,6 +21,7 @@ int num_rooms;
 npc_t *monster_list;
 // stores all monster descs
 vector<npc_desc_t> monster_descriptions;
+vector<item_desc_t> item_descriptions;
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -215,8 +216,10 @@ else if(pc_state < 0)
 */
 
 
-parse_monsters();
-print_monster_desc();
+//parse_monsters();
+//print_monster_desc();
+parse_items();
+print_item_desc();
 
 return 0;
 }
@@ -939,8 +942,8 @@ void print_dungeon_terminal(){
 
 void parse_monsters()
 {
-  string filePath = strcat(getenv("HOME"),"/.rlg327/monster_desc.txt");
-  ifstream file(filePath);
+  string monFilePath = strcat(getenv("HOME"),"/.rlg327/monster_desc.txt");
+  ifstream monFile(monFilePath);
   // temp is current string being worked on
   string temp;
   // following are monster characteristics that are grabbed from the monster desc
@@ -955,13 +958,13 @@ void parse_monsters()
   int rarity;
   // counter is number of characteristics parsed currently
   int counter = 0;
-  getline(file, temp);
+  getline(monFile, temp);
 
   if(temp == "RLG327 MONSTER DESCRIPTION 1")
   {
-    while(file.peek() != EOF) //goes until end of file
+    while(monFile.peek() != EOF) //goes until end of file
     {
-      getline(file, temp);
+      getline(monFile, temp);
       if(temp == "BEGIN MONSTER")
       {
         //cout << "\n" << endl;
@@ -976,7 +979,7 @@ void parse_monsters()
 	
         while(temp != "END")
         {
-          getline(file, temp);
+          getline(monFile, temp);
           // gets the monster name
           if(temp.length() > 4 && temp.substr(0,4) == "NAME")
           {
@@ -1117,10 +1120,10 @@ void parse_monsters()
           if(temp == "DESC")
           {
             counter++;
-            getline(file, temp);
+            getline(monFile, temp);
             while (temp != ".") {
               desc += "\n" + temp.substr(0, 77);
-              getline(file, temp);
+              getline(monFile, temp);
             }
             desc = desc.substr(1);
             //cout << desc << endl;
@@ -1131,18 +1134,9 @@ void parse_monsters()
           cout << "Error: Invalid Monster Description" << endl;
         } else {
           npc_desc_t m;
-	  dice_t speed_dice;
-	  speed_dice.base = speed[0];
-	  speed_dice.dice = speed[1];
-	  speed_dice.sides = speed[2];
-	  dice_t hp_dice;
-	  hp_dice.base = hp[0];
-	  hp_dice.dice = hp[1];
-	  hp_dice.sides = hp[2];
-	  dice_t dam_dice;
-	  dam_dice.base = dam[0];
-	  dam_dice.dice = dam[1];
-	  dam_dice.sides = dam[2];
+	  m.speed = make_dice(speed);
+	  m.hp = make_dice(hp);
+	  m.dam = make_dice(dam);
 	  
 	  m.name = name;
 	  m.desc = desc;
@@ -1150,10 +1144,7 @@ void parse_monsters()
 	  {
 	    m.color[i] = color[i];
 	  }
-	  
-	  m.speed = speed_dice;
-	  m.hp = hp_dice;
-	  m.dam = dam_dice;
+	 
 	  m.ability = ability;
 	  m.symb = symb;
 	  m.rarity = rarity;
@@ -1201,7 +1192,7 @@ void print_monster_desc()
    
     cout << monster_descriptions[i].symb << endl;
 
-    cout << get_colors(i) << endl;
+    cout << get_colors(i, 1) << endl;
     
     cout << monster_descriptions[i].speed.base << "+"
 	 << monster_descriptions[i].speed.dice << "d"
@@ -1222,41 +1213,359 @@ void print_monster_desc()
   }
 }
 
-std::string get_colors(int i)
+void parse_items()
 {
-  string ret;
-  for(int j = 0; j < 8; j++)
+  string objFilePath = strcat(getenv("HOME"),"/.rlg327/object_desc.txt");
+  ifstream objFile(objFilePath);
+  // temp is current string being worked on
+  string temp;
+  // following are monster characteristics that are grabbed from the monster desc
+  string name;
+  string desc;
+  string type;
+  int color[8];
+  int weight[3];
+  int hit[3];
+  int dam[3];
+  int attr[3];
+  int val[3];
+  int dodge[3];
+  int def[3];
+  int speed[3];
+  string art;
+  int rarity;
+  
+  // counter is number of characteristics parsed currently
+  int counter = 0;
+  getline(objFile, temp);
+  cout << temp << endl;
+  
+  if(temp == "RLG327 OBJECT DESCRIPTION 1")
   {
-    switch(monster_descriptions[i].color[j])
+    while(objFile.peek() != EOF) //goes until end of file
+    {
+      getline(objFile, temp);
+      if(temp == "BEGIN OBJECT")
       {
-      case 0:
-        ret += "BLACK ";
-	  break;
-      case 1:
-        ret += "RED ";
-	  break;
-      case 2:
-	ret += "GREEN ";
-	  break;
-      case 3:
-	ret += "YELLOW ";
-	  break;
-      case 4:
-	ret += "BLUE ";
-	  break;
-      case 5:
-	ret += "MAGENTA ";
-	  break;
-      case 6:
-	ret += "CYAN ";
-	  break;
-      case 7:
-	ret += "WHITE ";
-	  break;
-      default:
-	break;
+        // resets all attributes after each new desc 
+        desc = "";
+        counter = 0;
+	for(int i = 0; i < 8; i++)
+	{
+	  color[i] = -1;
+	}
+	
+        while(temp != "END")
+        {
+          getline(objFile, temp);
+          // gets the object name
+          if(temp.length() > 4 && temp.substr(0,4) == "NAME")
+          {
+            counter++;
+            name = temp.substr(5);
+            //cout << name << endl;
+          }
+          // gets the item type
+          if(temp.length() > 4 && temp.substr(0,4) == "TYPE") 
+          {
+            counter++;
+            type = temp.substr(5);
+            //cout << symb << endl;
+          }
+          // gets the object rarity
+          if(temp.length() > 4 && temp.substr(0,4) == "RRTY") 
+          {
+            counter++;
+            rarity = atoi(temp.substr(5).c_str());
+            //cout << rarity << endl;
+          }
+          // uses parse_dice to get object weight
+          if(temp.length() > 6 && temp.substr(0,6) == "WEIGHT")
+          {
+            counter++;
+            parse_dice(temp.substr(7), weight);
+            //cout << hp[0] << hp[1] << hp[2] << endl;
+          }
+          // uses parse_dice to get item damage
+          if(temp.length() > 3 && temp.substr(0,3) == "DAM")
+          {
+            counter++;
+            parse_dice(temp.substr(4), dam);
+            //cout << temp.substr(0,3) << temp.substr(4) << endl;
+          }
+          // uses parse_dice to get item speed
+          if(temp.length() > 5 && temp.substr(0,5) == "SPEED") 
+          {
+            counter++;
+            parse_dice(temp.substr(6), speed);
+            //cout << temp.substr(0,5) << temp.substr(6) << endl;
+          }
+          // parses through line word by word, and sets to equivalent integer
+          if(temp.length() > 5 && temp.substr(0,5) == "COLOR")
+          {
+            counter++;
+            int i = 6;
+            int lasti = i;
+            int colorIndex = 0;
+            int length = temp.length();
+            // gets characters until whitespace
+            while (i < length) {
+              while(temp[i] != ' ' && i < length){
+                i++;
+              }
+
+              if(temp.substr(lasti, i - lasti) == "BLACK"){
+                color[colorIndex++] = 0;
+              }
+              else if(temp.substr(lasti, i - lasti) == "RED"){
+                color[colorIndex++] = 1;
+              }
+              else if(temp.substr(lasti, i - lasti) == "GREEN"){
+                color[colorIndex++] = 2;
+              }
+              else if(temp.substr(lasti, i - lasti) == "YELLOW"){
+                color[colorIndex++] = 3;
+              }
+              else if(temp.substr(lasti, i - lasti) == "BLUE"){
+                color[colorIndex++] = 4;
+              }
+              else if(temp.substr(lasti, i - lasti) == "MAGENTA"){
+                color[colorIndex++] = 5;
+              }
+              else if(temp.substr(lasti, i - lasti) == "CYAN"){
+                color[colorIndex++] = 6;
+              }
+              else if(temp.substr(lasti, i - lasti) == "WHITE"){
+                color[colorIndex++] = 7;
+              }
+              else {
+                color[colorIndex++] = -1;
+              }
+              i++;
+              lasti = i;
+	      //cout << temp.substr(6) << endl;
+            }
+            
+          }
+          // uses parse_dice to get item art
+          if(temp.length() > 3 && temp.substr(0,3) == "HIT")
+          {
+            counter++;
+            parse_dice(temp.substr(4), hit);
+          }
+	  // uses parse_dice to get item attributes
+          if(temp.length() > 4 && temp.substr(0,4) == "ATTR")
+          {
+            counter++;
+            parse_dice(temp.substr(5), attr);
+          }
+	  // uses parse_dice to get item dodge
+          if(temp.length() > 5 && temp.substr(0,5) == "DODGE")
+          {
+            counter++;
+            parse_dice(temp.substr(6), dodge);
+          }
+	  // uses parse_dice to get item defense
+          if(temp.length() > 3 && temp.substr(0,3) == "DEF")
+          {
+            counter++;
+            parse_dice(temp.substr(4), def);
+          }
+	  // uses parse_dice to get item art
+          if(temp.length() > 3 && temp.substr(0,3) == "VAL")
+          {
+            counter++;
+            parse_dice(temp.substr(4), val);
+          }
+	  // gets the object artifact status
+	  if(temp.length() > 3 && temp.substr(0,3) == "ART")
+          {
+            counter++;
+            art = temp.substr(4);
+          }
+          // reads the next lines(77 chars max) until it encounters a singular ".", appends into desc string
+          if(temp == "DESC")
+          {
+            counter++;
+            getline(objFile, temp);
+            while (temp != ".") {
+              desc += "\n" + temp.substr(0, 77);
+              getline(objFile, temp);
+            }
+            desc = desc.substr(1);
+            //cout << desc << endl;
+          }
+        }
+        // if all characteristics are not set
+        if (counter != 14) {
+          cout << "Error: Invalid Object Description" << endl;
+        } else {
+          item_desc_t it;
+	  it.type = type;
+	  it.weight = make_dice(weight);
+	  it.hit = make_dice(hit);
+	  it.dam = make_dice(dam);
+	  it.def = make_dice(def);
+	  it.attr = make_dice(attr);
+	  it.val = make_dice(val);
+	  it.dodge = make_dice(dodge);
+	  it.speed = make_dice(speed);	  
+	  it.name = name;
+	  it.desc = desc;
+	  it.art = art;
+	  it.rarity = rarity;
+	  
+	  for(int i = 0; i < 8; i++)
+	  {
+	    it.color[i] = color[i];
+	  }
+	  
+
+	  item_descriptions.push_back(it);
+	  //cout << monster_descriptions.size() << endl;
+        }
+      }
     }
   }
+  else
+  {
+    cout << "Error: Invalid File Format" << endl;
+  }
+}
+
+void print_item_desc()
+{
+  int size = item_descriptions.size();
+  cout << "\n" << endl;
+  for(int i = 0; i < size; i++)
+  {
+    cout << item_descriptions[i].name << endl;
+    cout << item_descriptions[i].desc << endl;
+   
+    cout << item_descriptions[i].type << endl;
+
+    cout << get_colors(i, 0) << endl;
+    
+    cout << item_descriptions[i].speed.base << "+"
+	 << item_descriptions[i].speed.dice << "d"
+	 << item_descriptions[i].speed.sides << endl;
+
+    cout << item_descriptions[i].weight.base << "+"
+	 << item_descriptions[i].weight.dice << "d"
+	 << item_descriptions[i].weight.sides << endl;
+
+    cout << item_descriptions[i].attr.base << "+"
+	 << item_descriptions[i].attr.dice << "d"
+	 << item_descriptions[i].attr.sides << endl;
+
+    cout << item_descriptions[i].val.base << "+"
+	 << item_descriptions[i].val.dice << "d"
+	 << item_descriptions[i].val.sides << endl;
+
+    cout << item_descriptions[i].dodge.base << "+"
+	 << item_descriptions[i].dodge.dice << "d"
+	 << item_descriptions[i].dodge.sides << endl;
+
+    cout << item_descriptions[i].def.base << "+"
+	 << item_descriptions[i].def.dice << "d"
+	 << item_descriptions[i].def.sides << endl;
+
+    cout << item_descriptions[i].art << endl;
+    
+    cout << item_descriptions[i].hit.base << "+"
+	 << item_descriptions[i].hit.dice << "d"
+	 << item_descriptions[i].hit.sides << endl;
+    
+    cout << item_descriptions[i].dam.base << "+"
+	 << item_descriptions[i].dam.dice << "d"
+	 << item_descriptions[i].dam.sides << endl;
+    
+    cout << item_descriptions[i].rarity << endl;
+    cout << "\n" << endl;
+  }
+}
+
+dice_t make_dice(int temp[3])
+{
+  dice_t temp_dice;
+  temp_dice.base = temp[0];
+  temp_dice.dice = temp[1];
+  temp_dice.sides = temp[2];
+  return temp_dice;
+}
+
+std::string get_colors(int i, int toggle)
+{
+  string ret;
+  if (toggle){
+    for(int j = 0; j < 8; j++)
+    {
+      switch(monster_descriptions[i].color[j])
+      {
+	case 0:
+	  ret += "BLACK ";
+	  break;
+	case 1:
+	  ret += "RED ";
+	  break;
+	case 2:
+	  ret += "GREEN ";
+	  break;
+	case 3:
+	  ret += "YELLOW ";
+	  break;
+	case 4:
+	  ret += "BLUE ";
+	  break;
+	case 5:
+	  ret += "MAGENTA ";
+	  break;
+	case 6:
+	  ret += "CYAN ";
+	  break;
+	case 7:
+	  ret += "WHITE ";
+	  break;
+	default:
+	  break;
+      }
+    }
+  }
+  else {
+    for(int j = 0; j < 8; j++)
+    {
+      switch(item_descriptions[i].color[j])
+      {
+	case 0:
+	  ret += "BLACK ";
+	  break;
+	case 1:
+	  ret += "RED ";
+	  break;
+	case 2:
+	  ret += "GREEN ";
+	  break;
+	case 3:
+	  ret += "YELLOW ";
+	  break;
+	case 4:
+	  ret += "BLUE ";
+	  break;
+	case 5:
+	  ret += "MAGENTA ";
+	  break;
+	case 6:
+	  ret += "CYAN ";
+	  break;
+	case 7:
+	  ret += "WHITE ";
+	  break;
+	default:
+	  break;
+      }
+    }
+  }
+  
   return ret;
 }
 

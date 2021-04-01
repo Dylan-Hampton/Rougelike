@@ -73,6 +73,24 @@ class npc_desc_t {
     char symb;
     int rarity;
 };
+
+class item_desc_t {
+  public:
+  std::string name;
+  std::string desc;
+  std::string type;
+  int color[8];
+  dice_t weight;
+  dice_t hit;
+  dice_t dam;
+  dice_t attr;
+  dice_t val;
+  dice_t dodge;
+  dice_t def;
+  dice_t speed;
+  std::string art;
+  int rarity;
+};
   
 class npc_t {
   public:
@@ -142,9 +160,12 @@ void create_entities(int num_rooms, int *num_monsters); // creates the monsters 
 char get_monster_type(int n); // gets monster type based on number n
 void parse_monsters();
 void parse_dice(std::string temp, int dice[3]);
-std::string get_colors(int i);
+std::string get_colors(int i, int toggle);
 std::string get_abilities(int i);
 void print_monster_desc();
+void print_item_desc();
+void parse_items();
+dice_t make_dice(int temp[3]);
 
 
 //player_movement.c
