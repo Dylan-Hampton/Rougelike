@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
   int num_mon = 10;
   num_rooms = 0;
-  //char player_next_move;
+  char player_next_move;
   int alive_ent;
 
   if(argc > 1)
@@ -52,174 +52,151 @@ int main(int argc, char *argv[]) {
   free(upstairs);
   free(downstairs);
   free(rooms);
-  /*
-     initscr();
-     noecho();
-     raw();
-     curs_set(0);
-     keypad(stdscr, TRUE);
-   */
+  initscr();
+  noecho();
+  raw();
+  curs_set(0);
+  keypad(stdscr, TRUE);
+  start_color();
+  init_pair(COLOR_BLACK, COLOR_WHITE, COLOR_BLACK);
+  init_pair(COLOR_RED, COLOR_RED, COLOR_BLACK);
+  init_pair(COLOR_GREEN, COLOR_GREEN, COLOR_BLACK);
+  init_pair(COLOR_YELLOW, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(COLOR_BLUE, COLOR_BLUE, COLOR_BLACK);
+  init_pair(COLOR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
+  init_pair(COLOR_CYAN, COLOR_CYAN, COLOR_BLACK);
+  init_pair(COLOR_WHITE, COLOR_WHITE, COLOR_BLACK);
 
-  //print_dungeon(0);
   generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
   generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
 
-  /*
-     int pc_state = 1;
-     num_ent = num_mon + 1;
-     int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
-     int is_in_mon_list = 0, was_mon_list = 0;
-     int scroll = 0;
-     int fow_toggle = 0;
-     update_fow();
-
-
-
-     while(1)
-     {
-     if (is_in_mon_list == 0 && was_mon_list == 0) {
-  // sets the monster lists and takes all the turns until it is the player turn
-  generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
-  generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
-  pc_state = next_turn(dungeon_layout, dungeon_display,
-  dungeon_hardness, entities, dungeon_tunnel_map,
-  dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
-  }
-
-
-  if((pc_state > 0 && num_ent > 1) || was_mon_list)
-  {
-  if (is_in_mon_list) {
-  print_monster_list(alive_ent, scroll);
-  int input = getch();
-  if (input == 'Q') {
-  //quits game
-  endwin();
-  break;
-  } else if (input == 27) { //27 is esc key
-  //exits monster list
-  was_mon_list = 1;
-  scroll = 0;
-  is_in_mon_list = 0;
-  } else if (input == KEY_DOWN && scroll < alive_ent && alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent) {
-  //scrolls monster list up
-  scroll++;
-  } else if (input == KEY_UP && scroll > 0) {
-  //scrolls monster list down
-  scroll--;
-  }	
-  } else {
-  // if in regular player loop
-  was_mon_list = 0;
-  print_dungeon(pc_other_action, fow_toggle);
-  player_next_move = getch();
-  if(player_next_move == 'g') {
-  int star = star_movement(&alive_ent);
-  if (star) {
-  endwin();
-  break;
-  }
-  } else if (player_next_move == 'f' || player_next_move == 'F') {
-  fow_toggle = (fow_toggle + 1) % 2;
-  } else if (player_next_move == 'Q') {
-  endwin();
-  break;
-  } else if (player_next_move == 'm') {
-  //go to monster list
-  is_in_mon_list = 1;
-  } else if (player_next_move == '>' || player_next_move == '<') {
-  //go up or down stairs
-  interact_stair(player_next_move, &num_ent, &alive_ent, dungeon_layout, num_rooms, pc);
-  } else {
-  //move pc to specified place
-  pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+  int pc_state = 1;
+  num_ent = num_mon + 1;
+  int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
+  int is_in_mon_list = 0, was_mon_list = 0;
+  int scroll = 0;
+  int fow_toggle = 0;
   update_fow();
-  if (pc_other_action < 0) {
-  was_mon_list = 1;
-}
-}
-update_monster_list(num_ent);
+  parse_monsters();
+  parse_items();
 
-} else {
-  //Teleporting
-  player_next_move = getch();
-  if(player_next_move == 'g'){
-    is_teleporting = 0;
+  while(1)
+  {
+    if (is_in_mon_list == 0 && was_mon_list == 0) {
+      // sets the monster lists and takes all the turns until it is the player turn
+      generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
+      generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
+      pc_state = next_turn(dungeon_layout, dungeon_display,
+          dungeon_hardness, entities, dungeon_tunnel_map,
+          dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
+    }
+
+
+    if((pc_state > 0 && num_ent > 1) || was_mon_list)
+    {
+      if (is_in_mon_list) {
+        print_monster_list(alive_ent, scroll);
+        int input = getch();
+        if (input == 'Q') {
+          //quits game
+          endwin();
+          break;
+        } else if (input == 27) { //27 is esc key
+          //exits monster list
+          was_mon_list = 1;
+          scroll = 0;
+          is_in_mon_list = 0;
+        } else if (input == KEY_DOWN && scroll < alive_ent && alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent) {
+          //scrolls monster list up
+          scroll++;
+        } else if (input == KEY_UP && scroll > 0) {
+          //scrolls monster list down
+          scroll--;
+        }	
+      } else {
+        // if in regular player loop
+        was_mon_list = 0;
+        print_dungeon(pc_other_action, fow_toggle);
+        player_next_move = getch();
+        if(player_next_move == 'g') {
+          int star = star_movement(&alive_ent);
+          if (star) {
+            endwin();
+            break;
+          }
+        } else if (player_next_move == 'f' || player_next_move == 'F') {
+          fow_toggle = (fow_toggle + 1) % 2;
+        } else if (player_next_move == 'Q') {
+          endwin();
+          break;
+        } else if (player_next_move == 'm') {
+          //go to monster list
+          is_in_mon_list = 1;
+        } else if (player_next_move == '>' || player_next_move == '<') {
+          //go up or down stairs
+          interact_stair(player_next_move, &num_ent, &alive_ent, dungeon_layout, num_rooms, pc);
+        } else {
+          //move pc to specified place
+          pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
+          update_fow();
+          if (pc_other_action < 0) {
+            was_mon_list = 1;
+          }
+        }
+        update_monster_list(num_ent);
+    }    
+  } 
+
+  if(pc_state > 0 && alive_ent == 1)
+  {
+    endwin();
+    print_dungeon_terminal();
+    printf("                      _.--.    .--._\n");
+    printf("                    .'  .'      '.  '.\n");
+    printf("                   ;  .'    /\\    '.  ;\n");
+    printf("                   ;  '._,-/  \\-,_.`  ;\n");
+    printf("                   \\  ,`  / /\\ \\  `,  /\n");
+    printf("                    \\/    \\/  \\/    \\/\n");
+    printf("                    ,=_    \\/\\/    _=,\n");
+    printf("                    |  '_   \\/   _'  |\n");
+    printf("                    |_   ''-..-''   _|\n");
+    printf("                    | '-.        .-' |\n");
+    printf("                    |    '\\    /'    |\n");
+    printf("                    |      |  |      |\n");
+    printf("            ___     |      |  |      |     ___\n");
+    printf("        _,-',  ',   '_     |  |     _'   ,'  ,'-,_\n");
+    printf("      _(  \\  \\   \\'=--'-.  |  |  .-'--='/   /  /  )_\n");
+    printf("    ,'  \\  \\  \\   \\      '-'--'-'      /   /  /  /  '.\n");
+    printf("   !     \\  \\  \\   \\                  /   /  /  /     !\n");
+    printf("   :      \\  \\  \\   \\                /   /  /  /      :\n");
+    printf("\n                       PLAYER WINS!\n");
+    break;
   }
-  else if(player_next_move == 'r'){
-    //Random position
-    int y_rand_teleport = rand() % 21;
-    int x_rand_teleport = rand() % 80;
-    entities[y_rand_teleport][x_rand_teleport] = entities[pc.y_pos][pc.x_pos];
-    entities[pc.y_pos][pc.x_pos] = NULL;
-    dungeon_display[y_rand_teleport][x_rand_teleport] = dungeon_display[pc.y_pos][pc.x_pos];
-    dungeon_display[pc.y_pos][pc.x_pos] = dungeon_layout[pc.y_pos][pc.x_pos];
-    pc.x_pos = x_rand_teleport;
-    pc.y_pos = y_rand_teleport;
-    is_teleporting = 0;
+  else if(pc_state < 0)
+  {
+    endwin();
+    print_dungeon_terminal();
+    printf("                            ,-.\n");
+    printf("       ___,---.__          /'|`\\          __,---,___\n");
+    printf("    ,-'    \\`    `-.____,-'  |  `-.____,-'    //    `-.\n");
+    printf("  ,'        |           ~'\\     /`~           |        `.\n");
+    printf(" /      ___//              `. ,'          ,  , \\___      \\\n");
+    printf("|    ,-'   `-.__   _         |        ,    __,-'   `-.    |\n");
+    printf("|   /          /\\_  `   .    |    ,      _/\\          \\   |\n");
+    printf("\\  |           \\ \\`-.___ \\   |   / ___,-'/ /           |  /\n");
+    printf(" \\  \\           | `._   `\\\\  |  //'   _,' |           /  /\n");
+    printf("  `-.\\         /'  _ `---'' , . ``---' _  `\\         /,-'\n");
+    printf("     ``       /     \\    ,='/ \\`=.    /     \\       ''\n");
+    printf("             |__   /|\\_,--.,-.--,--._/|\\   __|\n");
+    printf("             /  `./  \\\\`\\ |  |  | /,//' \\,'  \\\n");
+    printf("            /   /     ||--+--|--+-/-|     \\   \\\n");
+    printf("           |   |     /'\\_\\_\\ | /_/_/`\\     |   |\n");
+    printf("            \\   \\__, \\_     `~'     _/ .__/   /\n");
+    printf("             `-._,-'   `-._______,-'   `-._,-'\n");
+    printf("\n                       MONSTERS WIN!\n");
+    break;
   }
 }
-
-}    
-} 
-
-else if(pc_state > 0 && alive_ent == 1)
-{
-  endwin();
-  print_dungeon_terminal();
-  printf("                      _.--.    .--._\n");
-  printf("                    .'  .'      '.  '.\n");
-  printf("                   ;  .'    /\\    '.  ;\n");
-  printf("                   ;  '._,-/  \\-,_.`  ;\n");
-  printf("                   \\  ,`  / /\\ \\  `,  /\n");
-  printf("                    \\/    \\/  \\/    \\/\n");
-  printf("                    ,=_    \\/\\/    _=,\n");
-  printf("                    |  '_   \\/   _'  |\n");
-  printf("                    |_   ''-..-''   _|\n");
-  printf("                    | '-.        .-' |\n");
-  printf("                    |    '\\    /'    |\n");
-  printf("                    |      |  |      |\n");
-  printf("            ___     |      |  |      |     ___\n");
-  printf("        _,-',  ',   '_     |  |     _'   ,'  ,'-,_\n");
-  printf("      _(  \\  \\   \\'=--'-.  |  |  .-'--='/   /  /  )_\n");
-  printf("    ,'  \\  \\  \\   \\      '-'--'-'      /   /  /  /  '.\n");
-  printf("   !     \\  \\  \\   \\                  /   /  /  /     !\n");
-  printf("   :      \\  \\  \\   \\                /   /  /  /      :\n");
-  printf("\n                       PLAYER WINS!\n");
-  break;
-}
-else if(pc_state < 0)
-{
-  endwin();
-  print_dungeon_terminal();
-  printf("                            ,-.\n");
-  printf("       ___,---.__          /'|`\\          __,---,___\n");
-  printf("    ,-'    \\`    `-.____,-'  |  `-.____,-'    //    `-.\n");
-  printf("  ,'        |           ~'\\     /`~           |        `.\n");
-  printf(" /      ___//              `. ,'          ,  , \\___      \\\n");
-  printf("|    ,-'   `-.__   _         |        ,    __,-'   `-.    |\n");
-  printf("|   /          /\\_  `   .    |    ,      _/\\          \\   |\n");
-  printf("\\  |           \\ \\`-.___ \\   |   / ___,-'/ /           |  /\n");
-  printf(" \\  \\           | `._   `\\\\  |  //'   _,' |           /  /\n");
-  printf("  `-.\\         /'  _ `---'' , . ``---' _  `\\         /,-'\n");
-  printf("     ``       /     \\    ,='/ \\`=.    /     \\       ''\n");
-  printf("             |__   /|\\_,--.,-.--,--._/|\\   __|\n");
-  printf("             /  `./  \\\\`\\ |  |  | /,//' \\,'  \\\n");
-  printf("            /   /     ||--+--|--+-/-|     \\   \\\n");
-  printf("           |   |     /'\\_\\_\\ | /_/_/`\\     |   |\n");
-  printf("            \\   \\__, \\_     `~'     _/ .__/   /\n");
-  printf("             `-._,-'   `-._______,-'   `-._,-'\n");
-  printf("\n                       MONSTERS WIN!\n");
-  break;
-}
-}
-*/
-
-
-//parse_monsters();
-//print_monster_desc();
-parse_items();
-print_item_desc();
 
 return 0;
 }
@@ -296,8 +273,6 @@ int star_movement(int *alive_ent) {
     direction = getch();
   }
   if (star_row + y_direction >= 0 && star_col + x_direction >= 0 && star_row + y_direction < DUNGEON_ROW && star_col + x_direction < DUNGEON_COL) {
-    //dungeon_display[star_row][star_col] = dungeon_layout[star_row][star_col];
-    //dungeon_fow[star_row][star_col] = dungeon_layout[star_row][star_col];
     output = teleport_player(star_row, star_col, num_ent, alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout, dungeon_fow);
     update_fow();
     print_dungeon(0, 0);
@@ -403,22 +378,41 @@ void create_entities(int num_rooms, int *num_monsters) {
     {
       if (room != player_room)
       {
-        int mon_type = (rand() % 16);
         int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
         int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
         if (dungeon_display[y][x] == TILE_FLOOR && *num_monsters > 0)
         {
           //initializing monster
-          dungeon_display[y][x] = 10 + mon_type;
+          dungeon_display[y][x] = 10;
+          int size = monster_descriptions.size();
+          int rand_desc;
+          int rand_rarity;
+          for (int i = 0; i < 2000; i++) {
+            rand_desc = rand() % size;
+            npc_t current_mon = monster_descriptions[rand_desc].generate_npc();
+            if ((current_mon.characteristics & BIT_UNIQ && current_mon.generated == 0
+                ) || !(current_mon.characteristics & BIT_UNIQ)) {
+                rand_rarity = rand() % 100;
+                if (rand_rarity < current_mon.rarity) {
+                  current_mon.generated++;
+                  current_mon.x_pos = x;
+                  current_mon.y_pos = y;
+                  character_t *monster = (character_t *) malloc(sizeof(character_t));
+                  monster->sn = seq++;
+                  monster->x_pos = x;
+                  monster->y_pos = y;
+                  monster->turn = 0;
+                  monster->is_pc = 0;
+                  monster->npc = &current_mon;
+                  monster->is_alive = 1;
+                  entities[y][x] = monster;
+                  spawned_mon++;
+                  (*num_monsters)--;
+                }
+            }
+          }
+/*
           npc_t *npc = (npc_t *) malloc(sizeof(npc_t));
-          npc->x_pos = x;
-          npc->y_pos = y;
-          npc->characteristics = mon_type;
-          npc->type = get_monster_type(mon_type);
-          character_t *monster = (character_t *) malloc(sizeof(character_t));
-          monster->sn = seq++;
-          monster->x_pos = x;
-          monster->y_pos = y;
           switch (mon_type % 4) {
             case 0:
               monster->speed = 5;
@@ -433,13 +427,7 @@ void create_entities(int num_rooms, int *num_monsters) {
               monster->speed = 20;
               break;
           }
-          monster->turn = 0;
-          monster->is_pc = 0;
-          monster->npc = npc;
-          monster->is_alive = 1;
-          entities[y][x] = monster;
-          spawned_mon++;
-          (*num_monsters)--;
+*/
         }
       }
     }
@@ -972,11 +960,11 @@ void parse_monsters()
         ability = 0;
         desc = "";
         counter = 0;
-	for(int i = 0; i < 8; i++)
-	{
-	  color[i] = -1;
-	}
-	
+        for(int i = 0; i < 8; i++)
+        {
+          color[i] = -1;
+        }
+
         while(temp != "END")
         {
           getline(monFile, temp);
@@ -1134,23 +1122,23 @@ void parse_monsters()
           cout << "Error: Invalid Monster Description" << endl;
         } else {
           npc_desc_t m;
-	  m.speed = make_dice(speed);
-	  m.hp = make_dice(hp);
-	  m.dam = make_dice(dam);
-	  
-	  m.name = name;
-	  m.desc = desc;
-	  for(int i = 0; i < 8; i++)
-	  {
-	    m.color[i] = color[i];
-	  }
-	 
-	  m.ability = ability;
-	  m.symb = symb;
-	  m.rarity = rarity;
+          m.speed = make_dice(speed);
+          m.hp = make_dice(hp);
+          m.dam = make_dice(dam);
 
-	  monster_descriptions.push_back(m);
-	  //cout << monster_descriptions.size() << endl;
+          m.name = name;
+          m.desc = desc;
+          for(int i = 0; i < 8; i++)
+          {
+            m.color[i] = color[i];
+          }
+
+          m.ability = ability;
+          m.symb = symb;
+          m.rarity = rarity;
+
+          monster_descriptions.push_back(m);
+          //cout << monster_descriptions.size() << endl;
         }
       }
     }
@@ -1189,25 +1177,25 @@ void print_monster_desc()
   {
     cout << monster_descriptions[i].name << endl;
     cout << monster_descriptions[i].desc << endl;
-   
+
     cout << monster_descriptions[i].symb << endl;
 
     cout << get_colors(i, 1) << endl;
-    
+
     cout << monster_descriptions[i].speed.base << "+"
-	 << monster_descriptions[i].speed.dice << "d"
-	 << monster_descriptions[i].speed.sides << endl;
+      << monster_descriptions[i].speed.dice << "d"
+      << monster_descriptions[i].speed.sides << endl;
 
     cout << get_abilities(i) << endl;
-    
+
     cout << monster_descriptions[i].hp.base << "+"
-	 << monster_descriptions[i].hp.dice << "d"
-	 << monster_descriptions[i].hp.sides << endl;
-    
+      << monster_descriptions[i].hp.dice << "d"
+      << monster_descriptions[i].hp.sides << endl;
+
     cout << monster_descriptions[i].dam.base << "+"
-	 << monster_descriptions[i].dam.dice << "d"
-	 << monster_descriptions[i].dam.sides << endl;
-    
+      << monster_descriptions[i].dam.dice << "d"
+      << monster_descriptions[i].dam.sides << endl;
+
     cout << monster_descriptions[i].rarity << endl;
     cout << "\n" << endl;
   }
@@ -1234,12 +1222,12 @@ void parse_items()
   int speed[3];
   string art;
   int rarity;
-  
+
   // counter is number of characteristics parsed currently
   int counter = 0;
   getline(objFile, temp);
   cout << temp << endl;
-  
+
   if(temp == "RLG327 OBJECT DESCRIPTION 1")
   {
     while(objFile.peek() != EOF) //goes until end of file
@@ -1250,11 +1238,11 @@ void parse_items()
         // resets all attributes after each new desc 
         desc = "";
         counter = 0;
-	for(int i = 0; i < 8; i++)
-	{
-	  color[i] = -1;
-	}
-	
+        for(int i = 0; i < 8; i++)
+        {
+          color[i] = -1;
+        }
+
         while(temp != "END")
         {
           getline(objFile, temp);
@@ -1343,9 +1331,9 @@ void parse_items()
               }
               i++;
               lasti = i;
-	      //cout << temp.substr(6) << endl;
+              //cout << temp.substr(6) << endl;
             }
-            
+
           }
           // uses parse_dice to get item art
           if(temp.length() > 3 && temp.substr(0,3) == "HIT")
@@ -1353,32 +1341,32 @@ void parse_items()
             counter++;
             parse_dice(temp.substr(4), hit);
           }
-	  // uses parse_dice to get item attributes
+          // uses parse_dice to get item attributes
           if(temp.length() > 4 && temp.substr(0,4) == "ATTR")
           {
             counter++;
             parse_dice(temp.substr(5), attr);
           }
-	  // uses parse_dice to get item dodge
+          // uses parse_dice to get item dodge
           if(temp.length() > 5 && temp.substr(0,5) == "DODGE")
           {
             counter++;
             parse_dice(temp.substr(6), dodge);
           }
-	  // uses parse_dice to get item defense
+          // uses parse_dice to get item defense
           if(temp.length() > 3 && temp.substr(0,3) == "DEF")
           {
             counter++;
             parse_dice(temp.substr(4), def);
           }
-	  // uses parse_dice to get item art
+          // uses parse_dice to get item art
           if(temp.length() > 3 && temp.substr(0,3) == "VAL")
           {
             counter++;
             parse_dice(temp.substr(4), val);
           }
-	  // gets the object artifact status
-	  if(temp.length() > 3 && temp.substr(0,3) == "ART")
+          // gets the object artifact status
+          if(temp.length() > 3 && temp.substr(0,3) == "ART")
           {
             counter++;
             art = temp.substr(4);
@@ -1401,28 +1389,28 @@ void parse_items()
           cout << "Error: Invalid Object Description" << endl;
         } else {
           item_desc_t it;
-	  it.type = type;
-	  it.weight = make_dice(weight);
-	  it.hit = make_dice(hit);
-	  it.dam = make_dice(dam);
-	  it.def = make_dice(def);
-	  it.attr = make_dice(attr);
-	  it.val = make_dice(val);
-	  it.dodge = make_dice(dodge);
-	  it.speed = make_dice(speed);	  
-	  it.name = name;
-	  it.desc = desc;
-	  it.art = art;
-	  it.rarity = rarity;
-	  
-	  for(int i = 0; i < 8; i++)
-	  {
-	    it.color[i] = color[i];
-	  }
-	  
+          it.type = type;
+          it.weight = make_dice(weight);
+          it.hit = make_dice(hit);
+          it.dam = make_dice(dam);
+          it.def = make_dice(def);
+          it.attr = make_dice(attr);
+          it.val = make_dice(val);
+          it.dodge = make_dice(dodge);
+          it.speed = make_dice(speed);	  
+          it.name = name;
+          it.desc = desc;
+          it.art = art;
+          it.rarity = rarity;
 
-	  item_descriptions.push_back(it);
-	  //cout << monster_descriptions.size() << endl;
+          for(int i = 0; i < 8; i++)
+          {
+            it.color[i] = color[i];
+          }
+
+
+          item_descriptions.push_back(it);
+          //cout << monster_descriptions.size() << endl;
         }
       }
     }
@@ -1441,45 +1429,45 @@ void print_item_desc()
   {
     cout << item_descriptions[i].name << endl;
     cout << item_descriptions[i].desc << endl;
-   
+
     cout << item_descriptions[i].type << endl;
 
     cout << get_colors(i, 0) << endl;
-    
+
     cout << item_descriptions[i].speed.base << "+"
-	 << item_descriptions[i].speed.dice << "d"
-	 << item_descriptions[i].speed.sides << endl;
+      << item_descriptions[i].speed.dice << "d"
+      << item_descriptions[i].speed.sides << endl;
 
     cout << item_descriptions[i].weight.base << "+"
-	 << item_descriptions[i].weight.dice << "d"
-	 << item_descriptions[i].weight.sides << endl;
+      << item_descriptions[i].weight.dice << "d"
+      << item_descriptions[i].weight.sides << endl;
 
     cout << item_descriptions[i].attr.base << "+"
-	 << item_descriptions[i].attr.dice << "d"
-	 << item_descriptions[i].attr.sides << endl;
+      << item_descriptions[i].attr.dice << "d"
+      << item_descriptions[i].attr.sides << endl;
 
     cout << item_descriptions[i].val.base << "+"
-	 << item_descriptions[i].val.dice << "d"
-	 << item_descriptions[i].val.sides << endl;
+      << item_descriptions[i].val.dice << "d"
+      << item_descriptions[i].val.sides << endl;
 
     cout << item_descriptions[i].dodge.base << "+"
-	 << item_descriptions[i].dodge.dice << "d"
-	 << item_descriptions[i].dodge.sides << endl;
+      << item_descriptions[i].dodge.dice << "d"
+      << item_descriptions[i].dodge.sides << endl;
 
     cout << item_descriptions[i].def.base << "+"
-	 << item_descriptions[i].def.dice << "d"
-	 << item_descriptions[i].def.sides << endl;
+      << item_descriptions[i].def.dice << "d"
+      << item_descriptions[i].def.sides << endl;
 
     cout << item_descriptions[i].art << endl;
-    
+
     cout << item_descriptions[i].hit.base << "+"
-	 << item_descriptions[i].hit.dice << "d"
-	 << item_descriptions[i].hit.sides << endl;
-    
+      << item_descriptions[i].hit.dice << "d"
+      << item_descriptions[i].hit.sides << endl;
+
     cout << item_descriptions[i].dam.base << "+"
-	 << item_descriptions[i].dam.dice << "d"
-	 << item_descriptions[i].dam.sides << endl;
-    
+      << item_descriptions[i].dam.dice << "d"
+      << item_descriptions[i].dam.sides << endl;
+
     cout << item_descriptions[i].rarity << endl;
     cout << "\n" << endl;
   }
@@ -1502,32 +1490,32 @@ std::string get_colors(int i, int toggle)
     {
       switch(monster_descriptions[i].color[j])
       {
-	case 0:
-	  ret += "BLACK ";
-	  break;
-	case 1:
-	  ret += "RED ";
-	  break;
-	case 2:
-	  ret += "GREEN ";
-	  break;
-	case 3:
-	  ret += "YELLOW ";
-	  break;
-	case 4:
-	  ret += "BLUE ";
-	  break;
-	case 5:
-	  ret += "MAGENTA ";
-	  break;
-	case 6:
-	  ret += "CYAN ";
-	  break;
-	case 7:
-	  ret += "WHITE ";
-	  break;
-	default:
-	  break;
+        case 0:
+          ret += "BLACK ";
+          break;
+        case 1:
+          ret += "RED ";
+          break;
+        case 2:
+          ret += "GREEN ";
+          break;
+        case 3:
+          ret += "YELLOW ";
+          break;
+        case 4:
+          ret += "BLUE ";
+          break;
+        case 5:
+          ret += "MAGENTA ";
+          break;
+        case 6:
+          ret += "CYAN ";
+          break;
+        case 7:
+          ret += "WHITE ";
+          break;
+        default:
+          break;
       }
     }
   }
@@ -1536,36 +1524,36 @@ std::string get_colors(int i, int toggle)
     {
       switch(item_descriptions[i].color[j])
       {
-	case 0:
-	  ret += "BLACK ";
-	  break;
-	case 1:
-	  ret += "RED ";
-	  break;
-	case 2:
-	  ret += "GREEN ";
-	  break;
-	case 3:
-	  ret += "YELLOW ";
-	  break;
-	case 4:
-	  ret += "BLUE ";
-	  break;
-	case 5:
-	  ret += "MAGENTA ";
-	  break;
-	case 6:
-	  ret += "CYAN ";
-	  break;
-	case 7:
-	  ret += "WHITE ";
-	  break;
-	default:
-	  break;
+        case 0:
+          ret += "BLACK ";
+          break;
+        case 1:
+          ret += "RED ";
+          break;
+        case 2:
+          ret += "GREEN ";
+          break;
+        case 3:
+          ret += "YELLOW ";
+          break;
+        case 4:
+          ret += "BLUE ";
+          break;
+        case 5:
+          ret += "MAGENTA ";
+          break;
+        case 6:
+          ret += "CYAN ";
+          break;
+        case 7:
+          ret += "WHITE ";
+          break;
+        default:
+          break;
       }
     }
   }
-  
+
   return ret;
 }
 

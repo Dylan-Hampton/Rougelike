@@ -1,3 +1,4 @@
+4/3/21 BN/DH: changed monster generation to be from desc, added monster factory
 3/30/21 BN/DH: Finished abilities, desc, added dice and description classes, added print function for parser //1.07 assignment done 
 3/29/21 BN/DH/CB: Finished color, damage, hp, and speed. Still need to do description
 3/24/21 BN: fixed the bug where you could teleport onto yourself

@@ -61,6 +61,23 @@ class dice_t {
     int sides;
 };
 
+  
+class npc_t {
+  public:
+  std::string name;
+  std::string desc;
+  int color[8];
+  int speed;
+  int hp;
+  dice_t dam;
+  int rarity;
+  int x_pos;
+  int y_pos;
+  int characteristics;
+  char type; //symbol
+  int generated = 0;
+};
+
 class npc_desc_t {
   public:
     std::string name;
@@ -72,6 +89,30 @@ class npc_desc_t {
     int ability;
     char symb;
     int rarity;
+
+int dice_roll(dice_t d) {
+  int sum = 0;
+  for (int i = 0; i < d.dice; i++) {
+    sum += (rand() % d.sides) + 1; 
+  }
+  return sum + d.base;
+}
+
+  npc_t generate_npc() {
+    npc_t output;
+    output.name = name;
+    output.desc = desc;
+    for (int i = 0; i < 8; i++) {
+      output.color[i] = color[i];
+    }
+    output.speed = dice_roll(speed);
+    output.hp = dice_roll(hp);
+    output.dam = dam;
+    output.characteristics = ability;
+    output.rarity = rarity;
+    output.type = symb;
+    return output;
+  }
 };
 
 class item_desc_t {
@@ -90,14 +131,6 @@ class item_desc_t {
   dice_t speed;
   std::string art;
   int rarity;
-};
-  
-class npc_t {
-  public:
-  int x_pos;
-  int y_pos;
-  int characteristics;
-  char type; //symbol
 };
 
 class character_t {
@@ -165,6 +198,7 @@ std::string get_abilities(int i);
 void print_monster_desc();
 void print_item_desc();
 void parse_items();
+int dice_roll(dice_t d);
 dice_t make_dice(int temp[3]);
 
 
