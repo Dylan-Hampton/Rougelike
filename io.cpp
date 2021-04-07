@@ -229,6 +229,12 @@ void io_display(dungeon *d)
               attroff(COLOR_PAIR(COLOR_WHITE));
           }
         visible_monsters++;
+      } else if (d->object_map[y][x] &&
+          can_see(d, character_get_pos(d->PC), d->object_map[y][x]->position, 1, 0)) {
+        attron(COLOR_PAIR(static_cast<object*>(d->object_map[y][x])->color));
+        mvaddch(y + 1, x,
+            d->object_map[y][x]->symbol);
+        attroff(COLOR_PAIR(static_cast<object*>(d->object_map[y][x])->color));
       } else {
         switch (pc_learned_terrain(d->PC, y, x)) {
           case ter_wall:

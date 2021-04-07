@@ -34,12 +34,14 @@ void gen_monsters(dungeon *d)
 {
   uint32_t i;
   npc *m;
+  object *o;
   uint32_t room;
   pair_t p;
   //const static char symbol[] = "0123456789abcdef";
 
   d->num_monsters = min(d->max_monsters, max_monster_cells(d));
 
+  //monster maker
   for (i = 0; i < d->num_monsters; i++) {
     int size = d->monster_descriptions.size();
     int rand_desc = rand() % size;
@@ -52,8 +54,6 @@ void gen_monsters(dungeon *d)
     }
     m = d->monster_descriptions[rand_desc].get_npc();
     d->monster_descriptions[rand_desc].generated++;
-//    memset(m, 0, sizeof (*m));
-    
     do {
       room = rand_range(1, d->num_rooms - 1);
       p[dim_y] = rand_range(d->rooms[room].position[dim_y],
@@ -66,18 +66,41 @@ void gen_monsters(dungeon *d)
     m->position[dim_y] = p[dim_y];
     m->position[dim_x] = p[dim_x];
     d->character_map[p[dim_y]][p[dim_x]] = m;
-    //m->speed = rand_range(5, 20);
     m->alive = 1;
     m->sequence_number = ++d->character_sequence_number;
-    //m->characteristics = rand() & 0x0000000f;
-    /*    m->npc->characteristics = 0xf;*/
-    //m->symbol = symbol[m->characteristics];
     m->have_seen_pc = 0;
     m->kills[kill_direct] = m->kills[kill_avenged] = 0;
 
     d->character_map[p[dim_y]][p[dim_x]] = m;
 
     heap_insert(&d->events, new_event(d, event_character_turn, m, 0));
+  }
+
+  //object maker
+  for (i = 0; i < 10; i++) {
+    int size = d->object_descriptions.size();
+    int rand_desc = rand() % size;
+    uint32_t rand_rarity = rand() % 100;
+    while ((d->object_descriptions[rand_desc].get_artifact()) && 
+          (d->object_descriptions[rand_desc].generated > 0) &&
+          d->object_descriptions[rand_desc].get_rarity() < rand_rarity) {
+      rand_desc = rand() % size;
+      rand_rarity = rand() % 100;
+    }
+    o = d->object_descriptions[rand_desc].get_object();
+    d->object_descriptions[rand_desc].generated++;
+    do {
+      room = rand_range(1, d->num_rooms - 1);
+      p[dim_y] = rand_range(d->rooms[room].position[dim_y],
+                            (d->rooms[room].position[dim_y] +
+                             d->rooms[room].size[dim_y] - 1));
+      p[dim_x] = rand_range(d->rooms[room].position[dim_x],
+                            (d->rooms[room].position[dim_x] +
+                             d->rooms[room].size[dim_x] - 1));
+    } while (d->character_map[p[dim_y]][p[dim_x]] && d->object_map[p[dim_y]][p[dim_x]]);
+    o->position[dim_y] = p[dim_y];
+    o->position[dim_x] = p[dim_x];
+    d->object_map[p[dim_y]][p[dim_x]] = o;
   }
 }
 

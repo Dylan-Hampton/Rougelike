@@ -81,6 +81,18 @@ class monster_description {
   }
 };
 
+class object {
+public:
+  std::string name, description;
+  char symbol;
+  uint32_t color;
+  dice damage;
+  int hit, dodge, defence, weight, speed, attribute, value;
+  bool artifact;
+  uint32_t rarity;
+  pair_t position;
+};
+
 class object_description {
  private:
   std::string name, description;
@@ -90,6 +102,7 @@ class object_description {
   bool artifact;
   uint32_t rarity;
  public:
+  int generated = 0;
   object_description() : name(),    description(), type(objtype_no_type),
                          color(0),  hit(),         damage(),
                          dodge(),   defence(),     weight(),
@@ -97,6 +110,8 @@ class object_description {
                          artifact(false), rarity(0)
   {
   }
+  bool get_artifact() { return artifact; }
+  uint32_t get_rarity() { return rarity; }
   void set(const std::string &name,
            const std::string &description,
            const object_type_t type,
@@ -111,6 +126,25 @@ class object_description {
            const dice &value,
            const bool artifact,
            const uint32_t rarity);
+  object *get_object() {
+    dice hit, damage, dodge, defence, weight, speed, attribute, value;
+    object *o = new object;
+    o->name = name;
+    o->symbol = object_symbol[type];
+    o->description = description;
+    o->color = color;
+    o->damage = damage;
+    o->hit = hit.roll();
+    o->dodge = dodge.roll();
+    o->defence = defence.roll();
+    o->weight = weight.roll();
+    o->speed = speed.roll();
+    o->attribute = attribute.roll();
+    o->value = value.roll();
+    o->artifact = artifact;
+    o->rarity = rarity;
+    return o;
+  }
   std::ostream &print(std::ostream &o);
   /* Need all these accessors because otherwise there is a *
    * circular dependancy that is difficult to get around.  */
