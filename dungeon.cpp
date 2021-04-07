@@ -1,1584 +1,1275 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <endian.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <limits.h>
+#include <sys/time.h>
+#include <assert.h>
+#include <errno.h>
+
+#include "heap.h"
 #include "dungeon.h"
+#include "utils.h"
+#include "event.h"
+#include "pc.h"
+#include "npc.h"
+#include "io.h"
 
-using namespace std;
+#define DUMP_HARDNESS_IMAGES 0
 
-//Globals
-int dungeon_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for tunneling monsters
-int dungeon_non_tunnel_map[DUNGEON_ROW][DUNGEON_COL]; // distance map for non-tunneling monsters
-int dungeon_layout[DUNGEON_ROW][DUNGEON_COL];
-int dungeon_fow[DUNGEON_ROW][DUNGEON_COL];
-int dungeon_star[DUNGEON_ROW][DUNGEON_COL];
-int dungeon_display[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for outputting text 
-uint8_t dungeon_hardness[DUNGEON_ROW][DUNGEON_COL]; //dungeon map for hardness level  hardness goes from 0 - 255 (0 meaning room or corridor, 255 meaning immutable)
-room_t *rooms;
-pc_t pc;
-stair_t *upstairs;
-stair_t *downstairs;
-character_t *entities[DUNGEON_ROW][DUNGEON_COL];
-heap_t entities_heap;
-int num_ent;
-int num_rooms;
-npc_t *monster_list;
-// stores all monster descs
-vector<npc_desc_t> monster_descriptions;
-vector<item_desc_t> item_descriptions;
+typedef struct corridor_path {
+  heap_node_t *hn;
+  uint8_t pos[2];
+  uint8_t from[2];
+  int32_t cost;
+} corridor_path_t;
 
-int main(int argc, char *argv[]) {
-  srand(time(NULL));
-  int num_mon = 10;
-  num_rooms = 0;
-  char player_next_move;
-  int alive_ent;
-
-  if(argc > 1)
-  {
-    for(int i = 1; i < argc; i++)
-    {
-      if(!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "-m"))
-      {
-        num_mon = atoi(argv[++i]);
-      }
-    }
-  }
-
-  upstairs = (stair_t *) malloc(sizeof(stair_t));
-  downstairs = (stair_t *) malloc(sizeof(stair_t));
-  rooms = (room_t *) malloc(MIN_ROOMS * sizeof(room_t));
-  num_ent = num_mon + 1;
-  alive_ent = num_ent;
-  spawn_new_dungeon(num_rooms, &num_mon, &alive_ent, &num_ent);
-  monster_list = (npc_t *) malloc(num_ent * sizeof(npc_t));
-
-  free(upstairs);
-  free(downstairs);
-  free(rooms);
-  initscr();
-  noecho();
-  raw();
-  curs_set(0);
-  keypad(stdscr, TRUE);
-  start_color();
-  init_pair(COLOR_BLACK, COLOR_WHITE, COLOR_BLACK);
-  init_pair(COLOR_RED, COLOR_RED, COLOR_BLACK);
-  init_pair(COLOR_GREEN, COLOR_GREEN, COLOR_BLACK);
-  init_pair(COLOR_YELLOW, COLOR_YELLOW, COLOR_BLACK);
-  init_pair(COLOR_BLUE, COLOR_BLUE, COLOR_BLACK);
-  init_pair(COLOR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
-  init_pair(COLOR_CYAN, COLOR_CYAN, COLOR_BLACK);
-  init_pair(COLOR_WHITE, COLOR_WHITE, COLOR_BLACK);
-
-  generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
-  generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
-
-  int pc_state = 1;
-  num_ent = num_mon + 1;
-  int pc_other_action = 0; // 1 = killed monster -1 = hit a wall 0 = default
-  int is_in_mon_list = 0, was_mon_list = 0;
-  int scroll = 0;
-  int fow_toggle = 0;
-  update_fow();
-  parse_monsters();
-  parse_items();
-
-  while(1)
-  {
-    if (is_in_mon_list == 0 && was_mon_list == 0) {
-      // sets the monster lists and takes all the turns until it is the player turn
-      generate_tunnel_dist_map(dungeon_hardness, dungeon_tunnel_map, pc.x_pos, pc.y_pos);
-      generate_nonTunnel_dist_map(dungeon_hardness, dungeon_non_tunnel_map, pc.x_pos, pc.y_pos);
-      pc_state = next_turn(dungeon_layout, dungeon_display,
-          dungeon_hardness, entities, dungeon_tunnel_map,
-          dungeon_non_tunnel_map, &entities_heap, num_ent, &alive_ent);
-    }
-
-
-    if((pc_state > 0 && num_ent > 1) || was_mon_list)
-    {
-      if (is_in_mon_list) {
-        print_monster_list(alive_ent, scroll);
-        int input = getch();
-        if (input == 'Q') {
-          //quits game
-          endwin();
-          break;
-        } else if (input == 27) { //27 is esc key
-          //exits monster list
-          was_mon_list = 1;
-          scroll = 0;
-          is_in_mon_list = 0;
-        } else if (input == KEY_DOWN && scroll < alive_ent && alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent) {
-          //scrolls monster list up
-          scroll++;
-        } else if (input == KEY_UP && scroll > 0) {
-          //scrolls monster list down
-          scroll--;
-        }	
-      } else {
-        // if in regular player loop
-        was_mon_list = 0;
-        print_dungeon(pc_other_action, fow_toggle);
-        player_next_move = getch();
-        if(player_next_move == 'g') {
-          int star = star_movement(&alive_ent);
-          if (star) {
-            endwin();
-            break;
-          }
-        } else if (player_next_move == 'f' || player_next_move == 'F') {
-          fow_toggle = (fow_toggle + 1) % 2;
-        } else if (player_next_move == 'Q') {
-          endwin();
-          break;
-        } else if (player_next_move == 'm') {
-          //go to monster list
-          is_in_mon_list = 1;
-        } else if (player_next_move == '>' || player_next_move == '<') {
-          //go up or down stairs
-          interact_stair(player_next_move, &num_ent, &alive_ent, dungeon_layout, num_rooms, pc);
-        } else {
-          //move pc to specified place
-          pc_other_action = move_player(player_next_move, num_ent, &alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout);
-          update_fow();
-          if (pc_other_action < 0) {
-            was_mon_list = 1;
-          }
-        }
-        update_monster_list(num_ent);
-    }    
-  } 
-
-  if(pc_state > 0 && alive_ent == 1)
-  {
-    endwin();
-    print_dungeon_terminal();
-    printf("                      _.--.    .--._\n");
-    printf("                    .'  .'      '.  '.\n");
-    printf("                   ;  .'    /\\    '.  ;\n");
-    printf("                   ;  '._,-/  \\-,_.`  ;\n");
-    printf("                   \\  ,`  / /\\ \\  `,  /\n");
-    printf("                    \\/    \\/  \\/    \\/\n");
-    printf("                    ,=_    \\/\\/    _=,\n");
-    printf("                    |  '_   \\/   _'  |\n");
-    printf("                    |_   ''-..-''   _|\n");
-    printf("                    | '-.        .-' |\n");
-    printf("                    |    '\\    /'    |\n");
-    printf("                    |      |  |      |\n");
-    printf("            ___     |      |  |      |     ___\n");
-    printf("        _,-',  ',   '_     |  |     _'   ,'  ,'-,_\n");
-    printf("      _(  \\  \\   \\'=--'-.  |  |  .-'--='/   /  /  )_\n");
-    printf("    ,'  \\  \\  \\   \\      '-'--'-'      /   /  /  /  '.\n");
-    printf("   !     \\  \\  \\   \\                  /   /  /  /     !\n");
-    printf("   :      \\  \\  \\   \\                /   /  /  /      :\n");
-    printf("\n                       PLAYER WINS!\n");
-    break;
-  }
-  else if(pc_state < 0)
-  {
-    endwin();
-    print_dungeon_terminal();
-    printf("                            ,-.\n");
-    printf("       ___,---.__          /'|`\\          __,---,___\n");
-    printf("    ,-'    \\`    `-.____,-'  |  `-.____,-'    //    `-.\n");
-    printf("  ,'        |           ~'\\     /`~           |        `.\n");
-    printf(" /      ___//              `. ,'          ,  , \\___      \\\n");
-    printf("|    ,-'   `-.__   _         |        ,    __,-'   `-.    |\n");
-    printf("|   /          /\\_  `   .    |    ,      _/\\          \\   |\n");
-    printf("\\  |           \\ \\`-.___ \\   |   / ___,-'/ /           |  /\n");
-    printf(" \\  \\           | `._   `\\\\  |  //'   _,' |           /  /\n");
-    printf("  `-.\\         /'  _ `---'' , . ``---' _  `\\         /,-'\n");
-    printf("     ``       /     \\    ,='/ \\`=.    /     \\       ''\n");
-    printf("             |__   /|\\_,--.,-.--,--._/|\\   __|\n");
-    printf("             /  `./  \\\\`\\ |  |  | /,//' \\,'  \\\n");
-    printf("            /   /     ||--+--|--+-/-|     \\   \\\n");
-    printf("           |   |     /'\\_\\_\\ | /_/_/`\\     |   |\n");
-    printf("            \\   \\__, \\_     `~'     _/ .__/   /\n");
-    printf("             `-._,-'   `-._______,-'   `-._,-'\n");
-    printf("\n                       MONSTERS WIN!\n");
-    break;
-  }
-}
-
-return 0;
-}
-
-int star_movement(int *alive_ent) {
-  int output = 0;
-  int star_row = pc.y_pos;
-  int star_col = pc.x_pos;
-  print_dungeon(0, 1);
-  mvwaddch(stdscr, star_row + 1, star_col, '*');
-  int x_direction = 0;
-  int y_direction = 0;
-  char direction = getch();
-  int random_x = (rand() % (DUNGEON_COL - 2)) + 1;
-  int random_y = (rand() % (DUNGEON_ROW - 2)) + 1;
-  while (direction != 'g') {
-    if (direction == 'r') {
-      star_row = random_y;
-      star_col = random_x;
-      break;
-    }
-    switch (direction) {
-      case '1':// down left
-      case 'b':
-        x_direction = -1;
-        y_direction = 1;
-        break;
-      case '2':// down
-      case 'j':
-        y_direction = 1;
-        x_direction = 0;
-        break;
-      case '3':// down right
-      case 'n':
-        x_direction = 1;
-        y_direction = 1;
-        break;
-      case '4':// left
-      case 'h':
-        x_direction = -1;
-        y_direction = 0;
-        break;
-      case '6':// right
-      case 'l':
-        y_direction = 0;
-        x_direction = 1;
-        break;
-      case '7':// up left
-      case 'y':
-        x_direction = -1;
-        y_direction = -1;
-        break;
-      case '8':// up
-      case 'k':
-        x_direction = 0;
-        y_direction = -1;
-        break;
-      case '9':// up right
-      case 'u':
-        x_direction = 1;
-        y_direction = -1;
-        break;
-      default:
-        break;
-    }
-    if (star_row + y_direction >= 0 && star_col + x_direction >= 0 && star_row + y_direction < DUNGEON_ROW && star_col + x_direction < DUNGEON_COL) {
-      star_row += y_direction;
-      star_col += x_direction;
-      print_dungeon(0, 1);
-    } else {
-      print_dungeon(-1, 1);
-    }  
-    mvwaddch(stdscr, star_row + 1, star_col, '*');
-    direction = getch();
-  }
-  if (star_row + y_direction >= 0 && star_col + x_direction >= 0 && star_row + y_direction < DUNGEON_ROW && star_col + x_direction < DUNGEON_COL) {
-    output = teleport_player(star_row, star_col, num_ent, alive_ent, entities, dungeon_display, &pc, &entities_heap, dungeon_layout, dungeon_fow);
-    update_fow();
-    print_dungeon(0, 0);
-  } else {
-    print_dungeon(-1, 1);
-  }
-  return output;
-}
-
-void update_monster_list(int num_ent) {
-  free(monster_list);
-  monster_list = (npc_t *) malloc(num_ent * sizeof(npc_t));
-  character_t *temp[num_ent - 1];
-  int index = 0;
-  for(int i = 0; i < num_ent - 1; i++)
-  {
-    temp[i] = (character_t *) heap_remove_min(&entities_heap);	  
-
-    if(temp[i]->is_alive && !(temp[i]->is_pc))
-    {
-      npc_t npc;
-      npc.x_pos = temp[i]->npc->x_pos;
-      npc.y_pos = temp[i]->npc->y_pos;
-      npc.characteristics = temp[i]->npc->characteristics;
-      npc.type = temp[i]->npc->type;
-      monster_list[index++] = npc;
-    }
-  } //reinserts temp into heap
-  for(int i = 0; i < num_ent - 1; i++)
-  {
-    heap_insert(&entities_heap, temp[i]);
-  }
-}
-
-// makes a new dungeon (used for going upstairs and downstairs)
-void spawn_new_dungeon(int num_rooms, int *num_mon, int *alive_ent, int *num_ent) {
-  //clears the entities array
-  for (int r = 0; r < DUNGEON_ROW; r++) {
-    for (int c = 0; c < DUNGEON_COL; c++) {
-      entities[r][c] = NULL;
-      dungeon_fow[r][c] = TILE_ROCK;
-    }
-  }
-  set_dungeon();
-  create_rooms(&num_rooms);
-  create_stairs();
-  create_paths(&num_rooms);
-  set_layout();
-  create_player();
-  create_entities(num_rooms, num_mon);
-  *num_ent = *num_mon + 1;
-  *alive_ent = *num_ent;
-  set_hardness();
-  entities_heap = generate_entities_heap(*num_mon, entities);
-}
-
-// updates the fog of war
-void update_fow() {
-  for (int r = -DUNGEON_FOW; r <= DUNGEON_FOW; r++) {
-    for (int c = -DUNGEON_FOW; c <= DUNGEON_FOW; c++) {
-      if (pc.y_pos + r >= 0 && pc.x_pos + c >= 0 && pc.y_pos + r < DUNGEON_ROW && pc.x_pos + c < DUNGEON_COL) {
-        dungeon_fow[pc.y_pos + r][pc.x_pos + c] = dungeon_display[pc.y_pos + r][pc.x_pos + c];
-      }
-    }
-  }
-}
-
-void create_entities(int num_rooms, int *num_monsters) {
-  int seq = 0;
-  //intializing player and placing into entities
-  character_t *player = (character_t *) malloc(sizeof(character_t));
-  player->sn = seq++;
-  player->x_pos = pc.x_pos;
-  player->y_pos = pc.y_pos;
-  player->speed = 10;
-  player->turn = 0;
-  player->is_pc = 1;
-  player->pc = &pc;
-  player->is_alive = 1;
-  entities[pc.y_pos][pc.x_pos] = player;
-  //finds which room the player is in so no monster spawn there
-  int player_room = 0;
-  for (int room = 0; room < num_rooms; room++)
-  {
-    for (int x = rooms[room].x_pos; x < rooms[room].x_pos + rooms[room].x_width; x++)
-    {
-      for (int y = rooms[room].y_pos; y < rooms[room].y_pos + rooms[room].y_height; y++)
-      {
-        if (x == pc.x_pos && y == pc.y_pos)
-        {
-          player_room = room; 
-        }
-      }
-    }
-  }
-
-  //places num_monsters randomly within the rooms (if no more space is available none are placed)
-  int attempts = 0;
-  int spawned_mon = 0;
-  while (*num_monsters > 0 && attempts < 1000)
-  {
-    for (int room = 0; room < num_rooms; room++)
-    {
-      if (room != player_room)
-      {
-        int x = rooms[room].x_pos + (rand() % rooms[room].x_width);
-        int y = rooms[room].y_pos + (rand() % rooms[room].y_height);
-        if (dungeon_display[y][x] == TILE_FLOOR && *num_monsters > 0)
-        {
-          //initializing monster
-          dungeon_display[y][x] = 10;
-          int size = monster_descriptions.size();
-          int rand_desc;
-          int rand_rarity;
-          for (int i = 0; i < 2000; i++) {
-            rand_desc = rand() % size;
-            npc_t current_mon = monster_descriptions[rand_desc].generate_npc();
-            if ((current_mon.characteristics & BIT_UNIQ && current_mon.generated == 0
-                ) || !(current_mon.characteristics & BIT_UNIQ)) {
-                rand_rarity = rand() % 100;
-                if (rand_rarity < current_mon.rarity) {
-                  current_mon.generated++;
-                  current_mon.x_pos = x;
-                  current_mon.y_pos = y;
-                  character_t *monster = (character_t *) malloc(sizeof(character_t));
-                  monster->sn = seq++;
-                  monster->x_pos = x;
-                  monster->y_pos = y;
-                  monster->turn = 0;
-                  monster->is_pc = 0;
-                  monster->npc = &current_mon;
-                  monster->is_alive = 1;
-                  entities[y][x] = monster;
-                  spawned_mon++;
-                  (*num_monsters)--;
-                }
-            }
-          }
 /*
-          npc_t *npc = (npc_t *) malloc(sizeof(npc_t));
-          switch (mon_type % 4) {
-            case 0:
-              monster->speed = 5;
-              break;
-            case 1:
-              monster->speed = 10;
-              break;
-            case 2:
-              monster->speed = 15;
-              break;
-            case 3:
-              monster->speed = 20;
-              break;
-          }
+static uint32_t in_room(dungeon *d, int16_t y, int16_t x)
+{
+  int i;
+
+  for (i = 0; i < d->num_rooms; i++) {
+    if ((x >= d->rooms[i].position[dim_x]) &&
+        (x < (d->rooms[i].position[dim_x] + d->rooms[i].size[dim_x])) &&
+        (y >= d->rooms[i].position[dim_y]) &&
+        (y < (d->rooms[i].position[dim_y] + d->rooms[i].size[dim_y]))) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
 */
-        }
-      }
-    }
-    attempts++;
-  }
 
-  *num_monsters = spawned_mon;
-}
-
-//returns respective monster character based on number
-char get_monster_type(int n) {
-  switch(n)
-  {
-    case 0:
-      return '0';
-      break;
-    case 1:
-      return '1';
-      break;
-    case 2:
-      return '2';
-      break;
-    case 3:
-      return '3';
-      break;
-    case 4:
-      return '4';
-      break;
-    case 5:
-      return '5';
-      break;
-    case 6:
-      return '6';
-      break;
-    case 7:
-      return '7';
-      break;
-    case 8:
-      return '8';
-      break;
-    case 9:
-      return '9';
-      break;
-    case 10:
-      return 'a';
-      break;
-    case 11:
-      return 'b';
-      break;
-    case 12:
-      return 'c';
-      break;
-    case 13:
-      return 'd';
-      break;
-    case 14:
-      return 'e';
-      break;
-    case 15:
-      return 'f';
-      break;
-  }
-  return 'Z';
-}
-
-void set_layout() {
-  for (int r = 0; r < DUNGEON_ROW; r++)
-  {
-    for (int c = 0; c < DUNGEON_COL; c++)
-    {
-      if (dungeon_display[r][c] == TILE_PC) {
-        dungeon_layout[r][c] = TILE_FLOOR;
-      } else {
-        dungeon_layout[r][c] = dungeon_display[r][c];
-      }
-    }
-  }
-}
-
-void set_hardness() { //sets any non-rock to zero hardness
-  for (int r = 0; r < DUNGEON_ROW; r++)
-  {
-    for (int c = 0; c < DUNGEON_COL; c++)
-    {
-      if (dungeon_display[r][c] != TILE_ROCK) {
-        dungeon_hardness[r][c] = 0;
-      }
-    }
-  }
-}
-
-void create_player() {
-  int player = 1;
-  // creates the player in the highest room corner
-  for (int y = 0; y < DUNGEON_ROW; y++)
-  {
-    for (int x = 0; x < DUNGEON_COL; x++)
-    {
-      if (dungeon_display[y][x] == TILE_FLOOR && player)
-      {
-        dungeon_display[y][x] = TILE_PC;
-        dungeon_hardness[y][x] = 0;
-        player = 0;
-        pc.x_pos = x;
-        pc.y_pos = y;
-      }
-    }
-  }	
-}
-
-void create_stairs() {
-  int upperstair = 1;
-  //adds upper staircase highest room corner
-  for (int y = 0; y < DUNGEON_ROW; y++)    
-  {
-    for (int x = 0; x < DUNGEON_COL; x++)
-    {
-      if (dungeon_display[y][x] == TILE_FLOOR && upperstair)
-      {
-        dungeon_display[y + 1][x + 1] = TILE_UP;
-        dungeon_hardness[y + 1][x + 1] = 0;
-        upperstair = 0;
-        upstairs[0].x_pos = x + 1;
-        upstairs[0].y_pos = y + 1;
-        upstairs[0].direction = 1;
-      }
-    }
-  }
-  int lowerstair = 1;
-  //adds lower staircase to lowest room corner
-  for (int y = DUNGEON_ROW - 1; y >= 0; y--)
-  {
-    for (int x = DUNGEON_COL - 1; x >= 0; x--)
-    {
-      if (dungeon_display[y][x] == TILE_FLOOR && lowerstair)
-      {
-        dungeon_display[y - 1][x - 1] = TILE_DOWN;
-        dungeon_hardness[y - 1][x - 1] = 0;
-        lowerstair = 0;
-        downstairs[0].x_pos = x - 1;
-        downstairs[0].y_pos = y - 1;
-        downstairs[0].direction = 0;
-      }
-    }
-  }
-}
-
-// creates the paths between rooms
-void create_paths(int *num_rooms){
-
-  //connects all rooms to intial room
-  for(int i = 1; i < *num_rooms; i++)
-  {
-    int room_center_x = rooms[i].x_pos + (rooms[i].x_width / 2);
-    int room_center_y = rooms[i].y_pos + (rooms[i].y_height / 2);
-    int x = rooms[0].x_pos + (rooms[0].x_width / 2);
-    int y = rooms[0].y_pos + (rooms[0].y_height / 2);
-
-    //goes up / down to room[i] y coordinate 
-    while(y != room_center_y)
-    {
-      if (room_center_y > y)
-      {
-        y++;
-      }  
-      else
-      {
-        y--;
-      }
-
-      //sets rock to corridor
-      if (dungeon_display[y][x] == TILE_ROCK && dungeon_display[y][x+1] != TILE_CORR && dungeon_display[y][x-1] != TILE_CORR)
-      {
-        dungeon_display[y][x] = TILE_CORR;
-        dungeon_hardness[y][x] = 0;
-      }
-    }
-
-    //goes left / right to room[i] x coordinate
-    while(x != room_center_x)
-    {
-      if (room_center_x > x)
-      {
-        x++;
-      }
-      else
-      {
-        x--;
-      }
-
-      //sets rock to corridor
-      if (dungeon_display[y][x] == TILE_ROCK && dungeon_display[y+1][x] != TILE_CORR && dungeon_display[y-1][x] != TILE_CORR)
-      {
-        dungeon_display[y][x] = TILE_CORR;
-        dungeon_hardness[y][x] = TILE_ROCK;
-      }
-    }
-  }
-}
-
-void create_rooms(int *num_rooms){
-  // int totalRooms = (rand() % 3) + 6;
-  int roomCount = 0;
-  int attempts = 0;
-  *num_rooms = MIN_ROOMS;
-
-  while(roomCount != MIN_ROOMS && attempts < 2000)
-  {
-    int x_coord = rand() % DUNGEON_COL; //0-79
-    int y_coord = rand() % DUNGEON_ROW; //0-20
-    int x_dim = (rand() % 4) + 4; //4-7 can change if want
-    int y_dim = (rand() % 4) + 3; //3-6 can change if want
-    int placement_successful = 1; //Can't get boolean to work? But works like bool
-
-    for(int r = -1; r <= 1; r++)
-    {
-      for(int c = -1; c <= 1; c++)
-      {
-        int y = y_coord+r;
-        int x = x_coord+c;
-
-        //Used to check if out of bounds
-        if((y > DUNGEON_ROW - 1 || y < 0) || (x > DUNGEON_COL - 1 || x < 0) || y+y_dim > DUNGEON_ROW - 1 || x+x_dim > DUNGEON_COL - 1)
-        {
-          placement_successful = 0;
-        }
-
-        //Checks each corner for overlap
-        else if(dungeon_display[y][x] != TILE_ROCK || dungeon_display[y + y_dim][x] != TILE_ROCK ||
-            dungeon_display[y][x+x_dim] != TILE_ROCK || dungeon_display[y+y_dim][x+x_dim] != TILE_ROCK)
-        {
-          placement_successful = 0;
-        }
-
-        //Checks if two rooms are touching by checking the perimeter of room
-        else
-        {
-          for(int j = x_coord; j <= x_coord + x_dim; j++)
-          {
-            for(int i = y_coord; i <= y_coord + y_dim; i++)
-            {
-              if(dungeon_display[i][x_coord-1] != TILE_ROCK || dungeon_display[y_coord-1][j] != TILE_ROCK ||
-                  dungeon_display[(y_coord+y_dim)+1][j] != TILE_ROCK || dungeon_display[i][(x_coord + x_dim)+1] != TILE_ROCK)
-              {
-                placement_successful = 0;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    //Sets cells if place is available
-    if(placement_successful)
-    {
-      for(int r = y_coord; r < y_coord + y_dim; r++)
-      {
-        for(int c = x_coord; c < x_coord + x_dim; c++)
-        {
-          dungeon_display[r][c] = TILE_FLOOR;
-          dungeon_hardness[r][c] = 0;
-        }
-      }
-
-      rooms[roomCount].x_width = x_dim;
-      rooms[roomCount].y_height = y_dim;
-      rooms[roomCount].x_pos = x_coord;
-      rooms[roomCount].y_pos = y_coord;
-      roomCount++;
-      attempts = 0;
-    }
-
-    //Ends if too many failed attempts in a row
-    else
-    {
-      attempts++; 
-    }
-  }
-}
-
-void set_dungeon(){
-  //Initializes dungeon, sets all rock display with randomized hardness factors
-  for(int y = 0; y < DUNGEON_ROW; y++)
-  {
-    for(int x = 0; x < DUNGEON_COL; x++)
-    {
-      dungeon_display[y][x] = TILE_ROCK;
-      dungeon_hardness[y][x] = (rand() % 254) + 1; //1-254
-    }
-  }
-}
-
-void print_dist_map(int dist_map[DUNGEON_ROW][DUNGEON_COL]){
-  for (int r = 0; r < DUNGEON_ROW; r++)
-  {
-    for (int c = 0; c < DUNGEON_COL; c++)
-    {
-      if (r == pc.y_pos && c == pc.x_pos) {
-        printf("@");
-      } else if (dist_map[r][c] <= 0){
-        printf("X");
-      } else if (dist_map[r][c] != INT_MAX) {
-        printf("%d", (dist_map[r][c] % 10));		
-      } else if (dungeon_hardness[r][c] == 0) { //janky but works
-        printf("X");
-      } else {
-        printf(" ");
-      }
-    }
-    printf("\n");
-  }
-}
-
-//prints the dungeon with ncurses
-void print_dungeon(int player_other_action, int toggle) {
-  //initializing the screen and turning on keyboard input
-  clear();
-  int dungeon_temp[DUNGEON_ROW][DUNGEON_COL];
-  for (int r = 0; r < DUNGEON_ROW; r++) {
-    for (int c = 0; c < DUNGEON_COL; c++) {
-      if (toggle) {
-        dungeon_temp[r][c] = dungeon_display[r][c];
-      } else {
-        dungeon_temp[r][c] = dungeon_fow[r][c];
-      }
-    }
-  }
-  if (player_other_action == -1) {
-    mvprintw(0, 1, "There is a wall in the way!"); 
-  } else if (player_other_action > 0) {
-    mvprintw(0, 1, "Slayed a monster!"); 
-  }
-  char currentchar;
-  for (int r = 0; r < DUNGEON_ROW; r++) {
-    for (int c = 0; c < DUNGEON_COL; c++) {
-      switch(dungeon_temp[r][c])
-      {
-        case TILE_ROCK:
-          currentchar = ' ';
-          break;
-        case TILE_FLOOR:
-          currentchar = '.';
-          break;
-
-        case TILE_CORR:
-          currentchar = '#';
-          break;
-
-        case TILE_DOWN:
-          currentchar = '>';
-          break;
-
-        case TILE_UP:
-          currentchar = '<';
-          break;
-
-        case TILE_PC:
-          currentchar = '@';
-          break;
-
-          //Monster 10-25 (n - 10 for type)
-        case 10:
-        case 11:
-        case 12:
-        case 13:
-        case 14:
-        case 15:
-        case 16:
-        case 17:
-        case 18:
-        case 19:
-        case 20:
-        case 21:
-        case 22:
-        case 23:
-        case 24:
-        case 25:
-          currentchar = get_monster_type(dungeon_temp[r][c] - 10);
-          break;
-
-        default:
-          currentchar = '!';
-          break;
-      }
-      mvwaddch(stdscr, r + 1, c, currentchar);
-    }  
-  }  
-  refresh();
-}
-
-// prints the monster list
-void print_monster_list(int alive_ent, int scroll) {
-  clear();
-  int y_dir;
-  int x_dir;
-  const char *y_string;
-  const char *x_string;
-  char adj[][18] = {"the normal", "the smart", "the stinky", "the shaggy", "the slow",
-    "the vile", "the giant", "the powerful", "the dumb", "the bloodthirsty",
-    "the dangerous", "the greedy", "the terrifying", "the tenacious", "the grotesque", "the savage"};
-
-  if(alive_ent > DUNGEON_ROW && DUNGEON_ROW + scroll < alive_ent)
-  {
-    alive_ent = scroll + DUNGEON_ROW;
-  }
-
-  for (int r = scroll; r < alive_ent - 1; r++) {
-    y_dir = pc.y_pos - monster_list[r].y_pos;
-    x_dir = pc.x_pos - monster_list[r].x_pos;
-    if (y_dir < 0) {
-      y_string = "south";
-      y_dir *= -1;
-    } else {
-      y_string = "north";
-    }
-    if (x_dir < 0) {
-      x_string = "east";
-      x_dir *= -1;
-    } else {
-      x_string = "west";
-    }
-    if (y_dir == 0) {
-      mvprintw(r - scroll, 1, "%3d| %16s %c, %2d %s", r, adj[monster_list[r].characteristics], monster_list[r].type, x_dir, x_string);
-    } if (x_dir == 0) {
-      mvprintw(r - scroll, 1, "%3d| %16s %c, %2d %s", r, adj[monster_list[r].characteristics], monster_list[r].type, y_dir, y_string);
-    } else {
-      mvprintw(r - scroll, 1, "%3d| %16s %c, %2d %s and %2d %s", r, adj[monster_list[r].characteristics], monster_list[r].type, y_dir, y_string, x_dir, x_string); 
-    }
-  }
-  refresh();
-}
-
-// 0 == rock(space)
-// 1 == room floor('.')
-// 2 == corridor('#')
-// 3 == downstairs('>')
-// 4 == upstairs('<')
-// 5 == player character('@')
-// 6 == monster('type')
-void print_dungeon_terminal(){
-
-  for(int r = 0; r < DUNGEON_ROW; r++)
-  {
-    for(int c = 0; c < DUNGEON_COL; c++)
-    {
-      switch(dungeon_display[r][c])
-      {
-        case TILE_ROCK:
-          printf(" ");
-          break;
-        case TILE_FLOOR:
-          printf(".");
-          break;
-
-        case TILE_CORR:
-          printf("#");
-          break;
-
-        case TILE_DOWN:
-          printf(">");
-          break;
-
-        case TILE_UP:
-          printf("<");
-          break;
-
-        case TILE_PC:
-          printf("@");
-          break;
-
-          //Monster 10-25 (n - 10 for type)
-        case 10:
-        case 11:
-        case 12:
-        case 13:
-        case 14:
-        case 15:
-        case 16:
-        case 17:
-        case 18:
-        case 19:
-        case 20:
-        case 21:
-        case 22:
-        case 23:
-        case 24:
-        case 25:
-          printf("%c", get_monster_type(dungeon_display[r][c] - 10));
-          break;
-
-        default:
-          printf("Error");
-          break;
-      }
-
-    }
-    printf("\n");
-  }
-}
-
-void parse_monsters()
+static uint32_t adjacent_to_room(dungeon *d, int16_t y, int16_t x)
 {
-  string monFilePath = strcat(getenv("HOME"),"/.rlg327/monster_desc.txt");
-  ifstream monFile(monFilePath);
-  // temp is current string being worked on
-  string temp;
-  // following are monster characteristics that are grabbed from the monster desc
-  string name;
-  string desc;
-  int color[8];
-  int speed[3];
-  int hp[3];
-  int dam[3];
-  int ability;
-  char symb;
-  int rarity;
-  // counter is number of characteristics parsed currently
-  int counter = 0;
-  getline(monFile, temp);
+  return (mapxy(x - 1, y) == ter_floor_room ||
+          mapxy(x + 1, y) == ter_floor_room ||
+          mapxy(x, y - 1) == ter_floor_room ||
+          mapxy(x, y + 1) == ter_floor_room);
+}
 
-  if(temp == "RLG327 MONSTER DESCRIPTION 1")
-  {
-    while(monFile.peek() != EOF) //goes until end of file
-    {
-      getline(monFile, temp);
-      if(temp == "BEGIN MONSTER")
-      {
-        //cout << "\n" << endl;
-        // resets all attributes after each new desc 
-        ability = 0;
-        desc = "";
-        counter = 0;
-        for(int i = 0; i < 8; i++)
-        {
-          color[i] = -1;
+static uint32_t is_open_space(dungeon *d, int16_t y, int16_t x)
+{
+  return !hardnessxy(x, y);
+}
+
+static int32_t corridor_path_cmp(const void *key, const void *with) {
+  return ((corridor_path_t *) key)->cost - ((corridor_path_t *) with)->cost;
+}
+
+static void dijkstra_corridor(dungeon *d, pair_t from, pair_t to)
+{
+  static corridor_path_t path[DUNGEON_Y][DUNGEON_X], *p;
+  static uint32_t initialized = 0;
+  heap_t h;
+  int32_t x, y;
+
+  if (!initialized) {
+    for (y = 0; y < DUNGEON_Y; y++) {
+      for (x = 0; x < DUNGEON_X; x++) {
+        path[y][x].pos[dim_y] = y;
+        path[y][x].pos[dim_x] = x;
+      }
+    }
+    initialized = 1;
+  }
+  
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      path[y][x].cost = INT_MAX;
+    }
+  }
+
+  path[from[dim_y]][from[dim_x]].cost = 0;
+
+  heap_init(&h, corridor_path_cmp, NULL);
+
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      if (mapxy(x, y) != ter_wall_immutable) {
+        path[y][x].hn = heap_insert(&h, &path[y][x]);
+      } else {
+        path[y][x].hn = NULL;
+      }
+    }
+  }
+
+  while ((p = (corridor_path_t *) heap_remove_min(&h))) {
+    p->hn = NULL;
+
+    if ((p->pos[dim_y] == to[dim_y]) && p->pos[dim_x] == to[dim_x]) {
+      for (x = to[dim_x], y = to[dim_y];
+           (x != from[dim_x]) || (y != from[dim_y]);
+           p = &path[y][x], x = p->from[dim_x], y = p->from[dim_y]) {
+        if (mapxy(x, y) != ter_floor_room) {
+          mapxy(x, y) = ter_floor_hall;
+          hardnessxy(x, y) = 0;
         }
+      }
+      heap_delete(&h);
+      return;
+    }
 
-        while(temp != "END")
-        {
-          getline(monFile, temp);
-          // gets the monster name
-          if(temp.length() > 4 && temp.substr(0,4) == "NAME")
-          {
-            counter++;
-            name = temp.substr(5);
-            //cout << name << endl;
-          }
-          // gets the monster symbol
-          if(temp.length() > 4 && temp.substr(0,4) == "SYMB") 
-          {
-            counter++;
-            symb = temp[5];
-            //cout << symb << endl;
-          }
-          // gets the monster rarity
-          if(temp.length() > 4 && temp.substr(0,4) == "RRTY") 
-          {
-            counter++;
-            rarity = atoi(temp.substr(5).c_str());
-            //cout << rarity << endl;
-          }
-          // uses parse_dice to get monster hp
-          if(temp.length() > 2 && temp.substr(0,2) == "HP")
-          {
-            counter++;
-            parse_dice(temp.substr(3), hp);
-            //cout << hp[0] << hp[1] << hp[2] << endl;
-          }
-          // uses parse_dice to get monster damage
-          if(temp.length() > 3 && temp.substr(0,3) == "DAM")
-          {
-            counter++;
-            parse_dice(temp.substr(4), dam);
-            //cout << temp.substr(0,3) << temp.substr(4) << endl;
-          }
-          // uses parse_dice to get monster speed
-          if(temp.length() > 5 && temp.substr(0,5) == "SPEED") 
-          {
-            counter++;
-            parse_dice(temp.substr(6), speed);
-            //cout << temp.substr(0,5) << temp.substr(6) << endl;
-          }
-          // parses through line word by word, and sets to equivalent integer
-          if(temp.length() > 5 && temp.substr(0,5) == "COLOR")
-          {
-            counter++;
-            int i = 6;
-            int lasti = i;
-            int colorIndex = 0;
-            int length = temp.length();
-            // gets characters until whitespace
-            while (i < length) {
-              while(temp[i] != ' ' && i < length){
-                i++;
-              }
+    if ((path[p->pos[dim_y] - 1][p->pos[dim_x]    ].hn) &&
+        (path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost >
+         p->cost + hardnesspair(p->pos))) {
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost =
+        p->cost + hardnesspair(p->pos);
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
+                                           [p->pos[dim_x]    ].hn);
+    }
+    if ((path[p->pos[dim_y]    ][p->pos[dim_x] - 1].hn) &&
+        (path[p->pos[dim_y]    ][p->pos[dim_x] - 1].cost >
+         p->cost + hardnesspair(p->pos))) {
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].cost =
+        p->cost + hardnesspair(p->pos);
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
+                                           [p->pos[dim_x] - 1].hn);
+    }
+    if ((path[p->pos[dim_y]    ][p->pos[dim_x] + 1].hn) &&
+        (path[p->pos[dim_y]    ][p->pos[dim_x] + 1].cost >
+         p->cost + hardnesspair(p->pos))) {
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].cost =
+        p->cost + hardnesspair(p->pos);
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
+                                           [p->pos[dim_x] + 1].hn);
+    }
+    if ((path[p->pos[dim_y] + 1][p->pos[dim_x]    ].hn) &&
+        (path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost >
+         p->cost + hardnesspair(p->pos))) {
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost =
+        p->cost + hardnesspair(p->pos);
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
+                                           [p->pos[dim_x]    ].hn);
+    }
+  }
+}
 
-              if(temp.substr(lasti, i - lasti) == "BLACK"){
-                color[colorIndex++] = 0;
-              }
-              else if(temp.substr(lasti, i - lasti) == "RED"){
-                color[colorIndex++] = 1;
-              }
-              else if(temp.substr(lasti, i - lasti) == "GREEN"){
-                color[colorIndex++] = 2;
-              }
-              else if(temp.substr(lasti, i - lasti) == "YELLOW"){
-                color[colorIndex++] = 3;
-              }
-              else if(temp.substr(lasti, i - lasti) == "BLUE"){
-                color[colorIndex++] = 4;
-              }
-              else if(temp.substr(lasti, i - lasti) == "MAGENTA"){
-                color[colorIndex++] = 5;
-              }
-              else if(temp.substr(lasti, i - lasti) == "CYAN"){
-                color[colorIndex++] = 6;
-              }
-              else if(temp.substr(lasti, i - lasti) == "WHITE"){
-                color[colorIndex++] = 7;
-              }
-              else {
-                color[colorIndex++] = -1;
-              }
-              i++;
-              lasti = i;
-            }
-            //cout << temp.substr(0,5) << temp.substr(6) << endl;
-          }
-          // parses through line word by word, and sets ability to appropriate binary number
-          if(temp.length() > 4 && temp.substr(0,4) == "ABIL")
-          {
-            counter++;
-            int i = 5;
-            int lasti = i;
-            int length = temp.length();
-            // gets characters till encounters whitespace
-            while (i < length) {
-              while(temp[i] != ' ' && i < length){
-                i++;
-              }
+/* This is a cut-and-paste of the above.  The code is modified to  *
+ * calculate paths based on inverse hardnesses so that we get a    *
+ * high probability of creating at least one cycle in the dungeon. */
+static void dijkstra_corridor_inv(dungeon *d, pair_t from, pair_t to)
+{
+  static corridor_path_t path[DUNGEON_Y][DUNGEON_X], *p;
+  static uint32_t initialized = 0;
+  heap_t h;
+  int32_t x, y;
 
-              if(temp.substr(lasti, i - lasti) == "SMART"){
-                ability = ability|BIT_SMART;
-              }
-              else if(temp.substr(lasti, i - lasti) == "TELE"){
-                ability = ability|BIT_TELE;
-              }
-              else if(temp.substr(lasti, i - lasti) == "TUNNEL"){
-                ability = ability|BIT_TUN;
-              }
-              else if(temp.substr(lasti, i - lasti) == "ERRATIC"){
-                ability = ability|BIT_ERAT;
-              }
-              else if(temp.substr(lasti, i - lasti) == "PASS"){
-                ability = ability|BIT_PASS;
-              }
-              else if(temp.substr(lasti, i - lasti) == "PICKUP"){
-                ability = ability|BIT_PICKUP;
-              }
-              else if(temp.substr(lasti, i - lasti) == "DESTROY"){
-                ability = ability|BIT_DESTROY;
-              }
-              else if(temp.substr(lasti, i - lasti) == "UNIQ"){
-                ability = ability|BIT_UNIQ;
-              }
-              else if(temp.substr(lasti, i - lasti) == "BOSS"){
-                ability = ability|BIT_BOSS;
-              }
-              else {
-                ability = -1;
-              }
-              i++;
-              lasti = i;
-            }
-            //cout << temp.substr(0,4) << temp.substr(5) << endl;
-          }
-          // reads the next lines(77 chars max) until it encounters a singular ".", appends into desc string
-          if(temp == "DESC")
-          {
-            counter++;
-            getline(monFile, temp);
-            while (temp != ".") {
-              desc += "\n" + temp.substr(0, 77);
-              getline(monFile, temp);
-            }
-            desc = desc.substr(1);
-            //cout << desc << endl;
+  if (!initialized) {
+    for (y = 0; y < DUNGEON_Y; y++) {
+      for (x = 0; x < DUNGEON_X; x++) {
+        path[y][x].pos[dim_y] = y;
+        path[y][x].pos[dim_x] = x;
+      }
+    }
+    initialized = 1;
+  }
+  
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      path[y][x].cost = INT_MAX;
+    }
+  }
+
+  path[from[dim_y]][from[dim_x]].cost = 0;
+
+  heap_init(&h, corridor_path_cmp, NULL);
+
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      if (mapxy(x, y) != ter_wall_immutable) {
+        path[y][x].hn = heap_insert(&h, &path[y][x]);
+      } else {
+        path[y][x].hn = NULL;
+      }
+    }
+  }
+
+  while ((p = (corridor_path_t *) heap_remove_min(&h))) {
+    p->hn = NULL;
+
+    if ((p->pos[dim_y] == to[dim_y]) && p->pos[dim_x] == to[dim_x]) {
+      for (x = to[dim_x], y = to[dim_y];
+           (x != from[dim_x]) || (y != from[dim_y]);
+           p = &path[y][x], x = p->from[dim_x], y = p->from[dim_y]) {
+        if (mapxy(x, y) != ter_floor_room) {
+          mapxy(x, y) = ter_floor_hall;
+          hardnessxy(x, y) = 0;
+        }
+      }
+      heap_delete(&h);
+      return;
+    }
+
+#define hardnesspair_inv(p) (is_open_space(d, p[dim_y], p[dim_x]) ? 127 :     \
+                             (adjacent_to_room(d, p[dim_y], p[dim_x]) ? 191 : \
+                              (255 - hardnesspair(p))))
+
+    if ((path[p->pos[dim_y] - 1][p->pos[dim_x]    ].hn) &&
+        (path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost >
+         p->cost + hardnesspair_inv(p->pos))) {
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost =
+        p->cost + hardnesspair_inv(p->pos);
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
+                                           [p->pos[dim_x]    ].hn);
+    }
+    if ((path[p->pos[dim_y]    ][p->pos[dim_x] - 1].hn) &&
+        (path[p->pos[dim_y]    ][p->pos[dim_x] - 1].cost >
+         p->cost + hardnesspair_inv(p->pos))) {
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].cost =
+        p->cost + hardnesspair_inv(p->pos);
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
+                                           [p->pos[dim_x] - 1].hn);
+    }
+    if ((path[p->pos[dim_y]    ][p->pos[dim_x] + 1].hn) &&
+        (path[p->pos[dim_y]    ][p->pos[dim_x] + 1].cost >
+         p->cost + hardnesspair_inv(p->pos))) {
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].cost =
+        p->cost + hardnesspair_inv(p->pos);
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
+                                           [p->pos[dim_x] + 1].hn);
+    }
+    if ((path[p->pos[dim_y] + 1][p->pos[dim_x]    ].hn) &&
+        (path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost >
+         p->cost + hardnesspair_inv(p->pos))) {
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost =
+        p->cost + hardnesspair_inv(p->pos);
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
+                                           [p->pos[dim_x]    ].hn);
+    }
+  }
+}
+
+/* Chooses a random point inside each room and connects them with a *
+ * corridor.  Random internal points prevent corridors from exiting *
+ * rooms in predictable locations.                                  */
+static int connect_two_rooms(dungeon *d, room_t *r1, room_t *r2)
+{
+  pair_t e1, e2;
+
+  e1[dim_y] = rand_range(r1->position[dim_y],
+                         r1->position[dim_y] + r1->size[dim_y] - 1);
+  e1[dim_x] = rand_range(r1->position[dim_x],
+                         r1->position[dim_x] + r1->size[dim_x] - 1);
+  e2[dim_y] = rand_range(r2->position[dim_y],
+                         r2->position[dim_y] + r2->size[dim_y] - 1);
+  e2[dim_x] = rand_range(r2->position[dim_x],
+                         r2->position[dim_x] + r2->size[dim_x] - 1);
+
+  /*  return connect_two_points_recursive(d, e1, e2);*/
+  dijkstra_corridor(d, e1, e2);
+
+  return 0;
+}
+
+static int create_cycle(dungeon *d)
+{
+  /* Find the (approximately) farthest two rooms, then connect *
+   * them by the shortest path using inverted hardnesses.      */
+
+  uint32_t max, tmp, i, j, p, q;
+  pair_t e1, e2;
+
+  for (i = max = 0; i < d->num_rooms - 1; i++) {
+    for (j = i + 1; j < d->num_rooms; j++) {
+      tmp = (((d->rooms[i].position[dim_x] - d->rooms[j].position[dim_x])  *
+              (d->rooms[i].position[dim_x] - d->rooms[j].position[dim_x])) +
+             ((d->rooms[i].position[dim_y] - d->rooms[j].position[dim_y])  *
+              (d->rooms[i].position[dim_y] - d->rooms[j].position[dim_y])));
+      if (tmp > max) {
+        max = tmp;
+        p = i;
+        q = j;
+      }
+    }
+  }
+
+  /* Can't simply call connect_two_rooms() because it doesn't *
+   * use inverse hardnesses, so duplicate it here.            */
+  e1[dim_y] = rand_range(d->rooms[p].position[dim_y],
+                         (d->rooms[p].position[dim_y] +
+                          d->rooms[p].size[dim_y] - 1));
+  e1[dim_x] = rand_range(d->rooms[p].position[dim_x],
+                         (d->rooms[p].position[dim_x] +
+                          d->rooms[p].size[dim_x] - 1));
+  e2[dim_y] = rand_range(d->rooms[q].position[dim_y],
+                         (d->rooms[q].position[dim_y] +
+                          d->rooms[q].size[dim_y] - 1));
+  e2[dim_x] = rand_range(d->rooms[q].position[dim_x],
+                         (d->rooms[q].position[dim_x] +
+                          d->rooms[q].size[dim_x] - 1));
+
+  dijkstra_corridor_inv(d, e1, e2);
+
+  return 0;
+}
+
+static int connect_rooms(dungeon *d)
+{
+  uint32_t i;
+
+  for (i = 1; i < d->num_rooms; i++) {
+    connect_two_rooms(d, d->rooms + i - 1, d->rooms + i);
+  }
+
+  create_cycle(d);
+
+  return 0;
+}
+
+int gaussian[5][5] = {
+  {  1,  4,  7,  4,  1 },
+  {  4, 16, 26, 16,  4 },
+  {  7, 26, 41, 26,  7 },
+  {  4, 16, 26, 16,  4 },
+  {  1,  4,  7,  4,  1 }
+};
+
+typedef struct queue_node {
+  int x, y;
+  struct queue_node *next;
+} queue_node_t;
+
+static int smooth_hardness(dungeon *d)
+{
+  int32_t i, x, y;
+  int32_t s, t, p, q;
+  queue_node_t *head, *tail, *tmp;
+#if DUMP_HARDNESS_IMAGES
+  FILE *out;
+#endif
+  uint8_t hardness[DUNGEON_Y][DUNGEON_X];
+
+  memset(&hardness, 0, sizeof (hardness));
+
+  /* Seed with some values */
+  for (i = 1; i < 255; i += 20) {
+    do {
+      x = rand() % DUNGEON_X;
+      y = rand() % DUNGEON_Y;
+    } while (hardness[y][x]);
+    hardness[y][x] = i;
+    if (i == 1) {
+      head = tail = (queue_node_t *) malloc(sizeof (*tail));
+    } else {
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+    }
+    tail->next = NULL;
+    tail->x = x;
+    tail->y = y;
+  }
+
+#if DUMP_HARDNESS_IMAGES
+  out = fopen("seeded.pgm", "w");
+  fprintf(out, "P5\n%u %u\n255\n", DUNGEON_X, DUNGEON_Y);
+  fwrite(&hardness, sizeof (hardness), 1, out);
+  fclose(out);
+#endif
+  
+  /* Diffuse the vaules to fill the space */
+  while (head) {
+    x = head->x;
+    y = head->y;
+    i = hardness[y][x];
+
+    if (x - 1 >= 0 && y - 1 >= 0 && !hardness[y - 1][x - 1]) {
+      hardness[y - 1][x - 1] = i;
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+      tail->next = NULL;
+      tail->x = x - 1;
+      tail->y = y - 1;
+    }
+    if (x - 1 >= 0 && !hardness[y][x - 1]) {
+      hardness[y][x - 1] = i;
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+      tail->next = NULL;
+      tail->x = x - 1;
+      tail->y = y;
+    }
+    if (x - 1 >= 0 && y + 1 < DUNGEON_Y && !hardness[y + 1][x - 1]) {
+      hardness[y + 1][x - 1] = i;
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+      tail->next = NULL;
+      tail->x = x - 1;
+      tail->y = y + 1;
+    }
+    if (y - 1 >= 0 && !hardness[y - 1][x]) {
+      hardness[y - 1][x] = i;
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+      tail->next = NULL;
+      tail->x = x;
+      tail->y = y - 1;
+    }
+    if (y + 1 < DUNGEON_Y && !hardness[y + 1][x]) {
+      hardness[y + 1][x] = i;
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+      tail->next = NULL;
+      tail->x = x;
+      tail->y = y + 1;
+    }
+    if (x + 1 < DUNGEON_X && y - 1 >= 0 && !hardness[y - 1][x + 1]) {
+      hardness[y - 1][x + 1] = i;
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+      tail->next = NULL;
+      tail->x = x + 1;
+      tail->y = y - 1;
+    }
+    if (x + 1 < DUNGEON_X && !hardness[y][x + 1]) {
+      hardness[y][x + 1] = i;
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+      tail->next = NULL;
+      tail->x = x + 1;
+      tail->y = y;
+    }
+    if (x + 1 < DUNGEON_X && y + 1 < DUNGEON_Y && !hardness[y + 1][x + 1]) {
+      hardness[y + 1][x + 1] = i;
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
+      tail = tail->next;
+      tail->next = NULL;
+      tail->x = x + 1;
+      tail->y = y + 1;
+    }
+
+    tmp = head;
+    head = head->next;
+    free(tmp);
+  }
+
+  /* And smooth it a bit with a gaussian convolution */
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      for (s = t = p = 0; p < 5; p++) {
+        for (q = 0; q < 5; q++) {
+          if (y + (p - 2) >= 0 && y + (p - 2) < DUNGEON_Y &&
+              x + (q - 2) >= 0 && x + (q - 2) < DUNGEON_X) {
+            s += gaussian[p][q];
+            t += hardness[y + (p - 2)][x + (q - 2)] * gaussian[p][q];
           }
         }
-        // if all characteristics are not set
-        if (counter != 9) {
-          cout << "Error: Invalid Monster Description" << endl;
+      }
+      d->hardness[y][x] = t / s;
+    }
+  }
+  /* Let's do it again, until it's smooth like Kenny G. */
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      for (s = t = p = 0; p < 5; p++) {
+        for (q = 0; q < 5; q++) {
+          if (y + (p - 2) >= 0 && y + (p - 2) < DUNGEON_Y &&
+              x + (q - 2) >= 0 && x + (q - 2) < DUNGEON_X) {
+            s += gaussian[p][q];
+            t += hardness[y + (p - 2)][x + (q - 2)] * gaussian[p][q];
+          }
+        }
+      }
+      d->hardness[y][x] = t / s;
+    }
+  }
+
+#if DUMP_HARDNESS_IMAGES
+  out = fopen("diffused.pgm", "w");
+  fprintf(out, "P5\n%u %u\n255\n", DUNGEON_X, DUNGEON_Y);
+  fwrite(&hardness, sizeof (hardness), 1, out);
+  fclose(out);
+
+  out = fopen("smoothed.pgm", "w");
+  fprintf(out, "P5\n%u %u\n255\n", DUNGEON_X, DUNGEON_Y);
+  fwrite(&d->hardness, sizeof (d->hardness), 1, out);
+  fclose(out);
+#endif
+
+  return 0;
+}
+
+static int empty_dungeon(dungeon *d)
+{
+  uint8_t x, y;
+
+  smooth_hardness(d);
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      mapxy(x, y) = ter_wall;
+      if (y == 0 || y == DUNGEON_Y - 1 ||
+          x == 0 || x == DUNGEON_X - 1) {
+        mapxy(x, y) = ter_wall_immutable;
+        hardnessxy(x, y) = 255;
+      }
+      charxy(x, y) = NULL;
+    }
+  }
+  d->is_new = 1;
+
+  return 0;
+}
+
+static int place_rooms(dungeon *d)
+{
+  pair_t p;
+  uint32_t i;
+  int success;
+  room_t *r;
+
+  for (success = 0; !success; ) {
+    success = 1;
+    for (i = 0; success && i < d->num_rooms; i++) {
+      r = d->rooms + i;
+      r->position[dim_x] = 1 + rand() % (DUNGEON_X - 2 - r->size[dim_x]);
+      r->position[dim_y] = 1 + rand() % (DUNGEON_Y - 2 - r->size[dim_y]);
+      for (p[dim_y] = r->position[dim_y] - 1;
+           success && p[dim_y] < r->position[dim_y] + r->size[dim_y] + 1;
+           p[dim_y]++) {
+        for (p[dim_x] = r->position[dim_x] - 1;
+             success && p[dim_x] < r->position[dim_x] + r->size[dim_x] + 1;
+             p[dim_x]++) {
+          if (mappair(p) >= ter_floor) {
+            success = 0;
+            empty_dungeon(d);
+          } else if ((p[dim_y] != r->position[dim_y] - 1)              &&
+                     (p[dim_y] != r->position[dim_y] + r->size[dim_y]) &&
+                     (p[dim_x] != r->position[dim_x] - 1)              &&
+                     (p[dim_x] != r->position[dim_x] + r->size[dim_x])) {
+            mappair(p) = ter_floor_room;
+            hardnesspair(p) = 0;
+          }
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+static void place_stairs(dungeon *d)
+{
+  pair_t p;
+  do {
+    while ((p[dim_y] = rand_range(1, DUNGEON_Y - 2)) &&
+           (p[dim_x] = rand_range(1, DUNGEON_X - 2)) &&
+           ((mappair(p) < ter_floor)                 ||
+            (mappair(p) > ter_stairs)))
+      ;
+    mappair(p) = ter_stairs_down;
+  } while (rand_under(1, 3));
+  do {
+    while ((p[dim_y] = rand_range(1, DUNGEON_Y - 2)) &&
+           (p[dim_x] = rand_range(1, DUNGEON_X - 2)) &&
+           ((mappair(p) < ter_floor)                 ||
+            (mappair(p) > ter_stairs)))
+      
+      ;
+    mappair(p) = ter_stairs_up;
+  } while (rand_under(2, 4));
+}
+
+static int make_rooms(dungeon *d)
+{
+  uint32_t i;
+
+  for (i = MIN_ROOMS; i < MAX_ROOMS && rand_under(5, 8); i++)
+    ;
+  d->num_rooms = i;
+  d->rooms = (room_t *) malloc(sizeof (*d->rooms) * d->num_rooms);
+  
+  for (i = 0; i < d->num_rooms; i++) {
+    d->rooms[i].size[dim_x] = ROOM_MIN_X;
+    d->rooms[i].size[dim_y] = ROOM_MIN_Y;
+    while (rand_under(3, 5) && d->rooms[i].size[dim_x] < ROOM_MAX_X) {
+      d->rooms[i].size[dim_x]++;
+    }
+    while (rand_under(3, 5) && d->rooms[i].size[dim_y] < ROOM_MAX_Y) {
+      d->rooms[i].size[dim_y]++;
+    }
+  }
+
+  return 0;
+}
+
+int gen_dungeon(dungeon *d)
+{
+  empty_dungeon(d);
+
+  do {
+    make_rooms(d);
+  } while (place_rooms(d));
+  connect_rooms(d);
+  place_stairs(d);
+
+  return 0;
+}
+
+void render_dungeon(dungeon *d)
+{
+  pair_t p;
+
+  putchar('\n');
+  for (p[dim_y] = 0; p[dim_y] < DUNGEON_Y; p[dim_y]++) {
+    for (p[dim_x] = 0; p[dim_x] < DUNGEON_X; p[dim_x]++) {
+      if (charpair(p)) {
+        putchar(charpair(p)->symbol);
+      } else {
+        switch (mappair(p)) {
+        case ter_wall:
+        case ter_wall_immutable:
+          putchar(' ');
+          break;
+        case ter_floor:
+        case ter_floor_room:
+          putchar('.');
+          break;
+        case ter_floor_hall:
+          putchar('#');
+          break;
+        case ter_debug:
+          putchar('*');
+          fprintf(stderr, "Debug character at %d, %d\n", p[dim_y], p[dim_x]);
+          break;
+        case ter_stairs_up:
+          putchar('<');
+          break;
+        case ter_stairs_down:
+          putchar('>');
+          break;
+        default:
+          break;
+        }
+      }
+    }
+    putchar('\n');
+  }
+  putchar('\n');
+  putchar('\n');
+}
+
+void delete_dungeon(dungeon *d)
+{
+  free(d->rooms);
+  heap_delete(&d->events);
+  memset(d->character_map, 0, sizeof (d->character_map));
+}
+
+void init_dungeon(dungeon *d)
+{
+  empty_dungeon(d);
+  memset(&d->events, 0, sizeof (d->events));
+  heap_init(&d->events, compare_events, event_delete);
+}
+
+int write_dungeon_map(dungeon *d, FILE *f)
+{
+  uint32_t x, y;
+
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      fwrite(&d->hardness[y][x], sizeof (unsigned char), 1, f);
+    }
+  }
+
+  return 0;
+}
+
+int write_rooms(dungeon *d, FILE *f)
+{
+  uint32_t i;
+  uint16_t p;
+
+  p = htobe16(d->num_rooms);
+  fwrite(&p, 2, 1, f);
+  for (i = 0; i < d->num_rooms; i++) {
+    /* write order is xpos, ypos, width, height */
+    p = d->rooms[i].position[dim_x];
+    fwrite(&p, 1, 1, f);
+    p = d->rooms[i].position[dim_y];
+    fwrite(&p, 1, 1, f);
+    p = d->rooms[i].size[dim_x];
+    fwrite(&p, 1, 1, f);
+    p = d->rooms[i].size[dim_y];
+    fwrite(&p, 1, 1, f);
+  }
+
+  return 0;
+}
+
+uint16_t count_up_stairs(dungeon *d)
+{
+  uint32_t x, y;
+  uint16_t i;
+
+  for (i = 0, y = 1; y < DUNGEON_Y - 1; y++) {
+    for (x = 1; x < DUNGEON_X - 1; x++) {
+      if (mapxy(x, y) == ter_stairs_up) {
+        i++;
+      }
+    }
+  }
+
+  return i;
+}
+
+uint16_t count_down_stairs(dungeon *d)
+{
+  uint32_t x, y;
+  uint16_t i;
+
+  for (i = 0, y = 1; y < DUNGEON_Y - 1; y++) {
+    for (x = 1; x < DUNGEON_X - 1; x++) {
+      if (mapxy(x, y) == ter_stairs_down) {
+        i++;
+      }
+    }
+  }
+
+  return i;
+}
+
+int write_stairs(dungeon *d, FILE *f)
+{
+  uint16_t num_stairs;
+  uint8_t x, y;
+
+  num_stairs = htobe16(count_up_stairs(d));
+  fwrite(&num_stairs, 2, 1, f);
+  for (y = 1; y < DUNGEON_Y - 1 && num_stairs; y++) {
+    for (x = 1; x < DUNGEON_X - 1 && num_stairs; x++) {
+      if (mapxy(x, y) == ter_stairs_up) {
+        num_stairs--;
+        fwrite(&x, 1, 1, f);
+        fwrite(&y, 1, 1, f);
+      }
+    }
+  }
+
+  num_stairs = htobe16(count_down_stairs(d));
+  fwrite(&num_stairs, 2, 1, f);
+  for (y = 1; y < DUNGEON_Y - 1 && num_stairs; y++) {
+    for (x = 1; x < DUNGEON_X - 1 && num_stairs; x++) {
+      if (mapxy(x, y) == ter_stairs_down) {
+        num_stairs--;
+        fwrite(&x, 1, 1, f);
+        fwrite(&y, 1, 1, f);
+      }
+    }
+  }
+
+  return 0;
+}
+
+uint32_t calculate_dungeon_size(dungeon *d)
+{
+  /* Per the spec, 1708 is 12 byte semantic marker + 4 byte file verion + *
+   * 4 byte file size + 2 byte PC position + 1680 byte hardness array +   *
+   * 2 byte each number of rooms, number of up stairs, number of down     *
+   * stairs.                                                              */
+  return (1708 + (d->num_rooms * 4) +
+          (count_up_stairs(d) * 2)  +
+          (count_down_stairs(d) * 2));
+}
+
+int write_dungeon(dungeon *d, char *file)
+{
+  const char *home;
+  char *filename;
+  FILE *f;
+  size_t len;
+  uint32_t be32;
+
+  if (!file) {
+    if (!(home = getenv("HOME"))) {
+      fprintf(stderr, "\"HOME\" is undefined.  Using working directory.\n");
+      home = ".";
+    }
+
+    len = (strlen(home) + strlen(SAVE_DIR) + strlen(DUNGEON_SAVE_FILE) +
+           1 /* The NULL terminator */                                 +
+           2 /* The slashes */);
+
+    filename = (char *) malloc(len * sizeof (*filename));
+    sprintf(filename, "%s/%s/", home, SAVE_DIR);
+    makedirectory(filename);
+    strcat(filename, DUNGEON_SAVE_FILE);
+
+    if (!(f = fopen(filename, "w"))) {
+      perror(filename);
+      free(filename);
+
+      return 1;
+    }
+    free(filename);
+  } else {
+    if (!(f = fopen(file, "w"))) {
+      perror(file);
+      exit(-1);
+    }
+  }
+
+  /* The semantic, which is 6 bytes, 0-11 */
+  fwrite(DUNGEON_SAVE_SEMANTIC, 1, sizeof (DUNGEON_SAVE_SEMANTIC) - 1, f);
+
+  /* The version, 4 bytes, 12-15 */
+  be32 = htobe32(DUNGEON_SAVE_VERSION);
+  fwrite(&be32, sizeof (be32), 1, f);
+
+  /* The size of the file, 4 bytes, 16-19 */
+  be32 = htobe32(calculate_dungeon_size(d));
+  fwrite(&be32, sizeof (be32), 1, f);
+
+  /* The PC position, 2 bytes, 20-21 */
+  fwrite(&d->PC->position[dim_x], 1, 1, f);
+  fwrite(&d->PC->position[dim_y], 1, 1, f);
+
+  /* The dungeon map, 1680 bytes, 22-1702 */
+  write_dungeon_map(d, f);
+
+  /* The rooms, num_rooms * 4 bytes, 1703-end */
+  write_rooms(d, f);
+
+  /* And the stairs */
+  write_stairs(d, f);
+
+  fclose(f);
+
+  return 0;
+}
+
+int read_dungeon_map(dungeon *d, FILE *f)
+{
+  uint32_t x, y;
+
+  for (y = 0; y < DUNGEON_Y; y++) {
+    for (x = 0; x < DUNGEON_X; x++) {
+      fread(&d->hardness[y][x], sizeof (d->hardness[y][x]), 1, f);
+      if (d->hardness[y][x] == 0) {
+        /* Mark it as a corridor.  We can't recognize room cells until *
+         * after we've read the room array, which we haven't done yet. */
+        d->map[y][x] = ter_floor_hall;
+      } else if (d->hardness[y][x] == 255) {
+        d->map[y][x] = ter_wall_immutable;
+      } else {
+        d->map[y][x] = ter_wall;
+      }
+    }
+  }
+
+
+  return 0;
+}
+
+int read_stairs(dungeon *d, FILE *f)
+{
+  uint16_t num_stairs;
+  uint8_t x, y;
+
+  fread(&num_stairs, 2, 1, f);
+  num_stairs = be16toh(num_stairs);
+  for (; num_stairs; num_stairs--) {
+    fread(&x, 1, 1, f);
+    fread(&y, 1, 1, f);
+    mapxy(x, y) = ter_stairs_up;
+  }
+
+  fread(&num_stairs, 2, 1, f);
+  num_stairs = be16toh(num_stairs);
+  for (; num_stairs; num_stairs--) {
+    fread(&x, 1, 1, f);
+    fread(&y, 1, 1, f);
+    mapxy(x, y) = ter_stairs_down;
+  }
+  return 0;
+}
+
+int read_rooms(dungeon *d, FILE *f)
+{
+  uint32_t i;
+  int32_t x, y;
+  uint16_t p;
+
+  fread(&p, 2, 1, f);
+  d->num_rooms = be16toh(p);
+  d->rooms = (room_t *) malloc(sizeof (*d->rooms) * d->num_rooms);
+
+  for (i = 0; i < d->num_rooms; i++) {
+    fread(&p, 1, 1, f);
+    d->rooms[i].position[dim_x] = p;
+    fread(&p, 1, 1, f);
+    d->rooms[i].position[dim_y] = p;
+    fread(&p, 1, 1, f);
+    d->rooms[i].size[dim_x] = p;
+    fread(&p, 1, 1, f);
+    d->rooms[i].size[dim_y] = p;
+
+    if (d->rooms[i].size[dim_x] < 1             ||
+        d->rooms[i].size[dim_y] < 1             ||
+        d->rooms[i].size[dim_x] > DUNGEON_X - 1 ||
+        d->rooms[i].size[dim_y] > DUNGEON_X - 1) {
+      fprintf(stderr, "Invalid room size in restored dungeon.\n");
+
+      exit(-1);
+    }
+
+    if (d->rooms[i].position[dim_x] < 1                                       ||
+        d->rooms[i].position[dim_y] < 1                                       ||
+        d->rooms[i].position[dim_x] > DUNGEON_X - 1                           ||
+        d->rooms[i].position[dim_y] > DUNGEON_Y - 1                           ||
+        d->rooms[i].position[dim_x] + d->rooms[i].size[dim_x] > DUNGEON_X - 1 ||
+        d->rooms[i].position[dim_x] + d->rooms[i].size[dim_x] < 0             ||
+        d->rooms[i].position[dim_y] + d->rooms[i].size[dim_y] > DUNGEON_Y - 1 ||
+        d->rooms[i].position[dim_y] + d->rooms[i].size[dim_y] < 0)             {
+      fprintf(stderr, "Invalid room position in restored dungeon.\n");
+
+      exit(-1);
+    }
+        
+
+    /* After reading each room, we need to reconstruct them in the dungeon. */
+    for (y = d->rooms[i].position[dim_y];
+         y < d->rooms[i].position[dim_y] + d->rooms[i].size[dim_y];
+         y++) {
+      for (x = d->rooms[i].position[dim_x];
+           x < d->rooms[i].position[dim_x] + d->rooms[i].size[dim_x];
+           x++) {
+        mapxy(x, y) = ter_floor_room;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int read_dungeon(dungeon *d, char *file)
+{
+  char semantic[sizeof (DUNGEON_SAVE_SEMANTIC)];
+  uint32_t be32;
+  FILE *f;
+  const char *home;
+  size_t len;
+  char *filename;
+  struct stat buf;
+
+  if (!file) {
+    if (!(home = getenv("HOME"))) {
+      fprintf(stderr, "\"HOME\" is undefined.  Using working directory.\n");
+      home = ".";
+    }
+
+    len = (strlen(home) + strlen(SAVE_DIR) + strlen(DUNGEON_SAVE_FILE) +
+           1 /* The NULL terminator */                                 +
+           2 /* The slashes */);
+
+    filename = (char *) malloc(len * sizeof (*filename));
+    sprintf(filename, "%s/%s/%s", home, SAVE_DIR, DUNGEON_SAVE_FILE);
+
+    if (!(f = fopen(filename, "r"))) {
+      perror(filename);
+      free(filename);
+      exit(-1);
+    }
+
+    if (stat(filename, &buf)) {
+      perror(filename);
+      exit(-1);
+    }
+
+    free(filename);
+  } else {
+    if (!(f = fopen(file, "r"))) {
+      perror(file);
+      exit(-1);
+    }
+    if (stat(file, &buf)) {
+      perror(file);
+      exit(-1);
+    }
+  }
+
+  d->num_rooms = 0;
+
+  fread(semantic, sizeof (DUNGEON_SAVE_SEMANTIC) - 1, 1, f);
+  semantic[sizeof (DUNGEON_SAVE_SEMANTIC) - 1] = '\0';
+  if (strncmp(semantic, DUNGEON_SAVE_SEMANTIC,
+	      sizeof (DUNGEON_SAVE_SEMANTIC) - 1)) {
+    fprintf(stderr, "Not an RLG327 save file.\n");
+    exit(-1);
+  }
+  fread(&be32, sizeof (be32), 1, f);
+  if (be32toh(be32) != 0) { /* Since we expect zero, be32toh() is a no-op. */
+    fprintf(stderr, "File version mismatch.\n");
+    exit(-1);
+  }
+  fread(&be32, sizeof (be32), 1, f);
+  if (buf.st_size != be32toh(be32)) {
+    fprintf(stderr, "File size mismatch.\n");
+    exit(-1);
+  }
+
+  fread(&d->PC->position[dim_x], 1, 1, f);
+  fread(&d->PC->position[dim_y], 1, 1, f);
+  
+  read_dungeon_map(d, f);
+
+  read_rooms(d, f);
+
+  read_stairs(d, f);
+
+  fclose(f);
+
+  return 0;
+}
+
+/* PGM dungeon descriptions do not support PC or stairs */
+int read_pgm(dungeon *d, char *pgm)
+{
+  FILE *f;
+  char s[80];
+  uint8_t gm[DUNGEON_Y - 2][DUNGEON_X - 2];
+  uint32_t x, y;
+  uint32_t i;
+  char size[8]; /* Big enough to hold two 3-digit values with a space between. */
+
+  if (!(f = fopen(pgm, "r"))) {
+    perror(pgm);
+    exit(-1);
+  }
+
+  if (!fgets(s, 80, f) || strncmp(s, "P5", 2)) {
+    fprintf(stderr, "Expected P5\n");
+    exit(-1);
+  }
+  if (!fgets(s, 80, f) || s[0] != '#') {
+    fprintf(stderr, "Expected comment\n");
+    exit(-1);
+  }
+  snprintf(size, 8, "%d %d", DUNGEON_X - 2, DUNGEON_Y - 2);
+  if (!fgets(s, 80, f) || strncmp(s, size, 5)) {
+    fprintf(stderr, "Expected %s\n", size);
+    exit(-1);
+  }
+  if (!fgets(s, 80, f) || strncmp(s, "255", 2)) {
+    fprintf(stderr, "Expected 255\n");
+    exit(-1);
+  }
+
+  fread(gm, 1, (DUNGEON_X - 2) * (DUNGEON_Y - 2), f);
+
+  fclose(f);
+
+  /* In our gray map, treat black (0) as corridor, white (255) as room, *
+   * all other values as a hardness.  For simplicity, treat every white *
+   * cell as its own room, so we have to count white after reading the  *
+   * image in order to allocate the room array.                         */
+  for (d->num_rooms = 0, y = 0; y < DUNGEON_Y - 2; y++) {
+    for (x = 0; x < DUNGEON_X - 2; x++) {
+      if (!gm[y][x]) {
+        d->num_rooms++;
+      }
+    }
+  }
+  d->rooms = (room_t *) malloc(sizeof (*d->rooms) * d->num_rooms);
+
+  for (i = 0, y = 0; y < DUNGEON_Y - 2; y++) {
+    for (x = 0; x < DUNGEON_X - 2; x++) {
+      if (!gm[y][x]) {
+        d->rooms[i].position[dim_x] = x + 1;
+        d->rooms[i].position[dim_y] = y + 1;
+        d->rooms[i].size[dim_x] = 1;
+        d->rooms[i].size[dim_y] = 1;
+        i++;
+        d->map[y + 1][x + 1] = ter_floor_room;
+        d->hardness[y + 1][x + 1] = 0;
+      } else if (gm[y][x] == 255) {
+        d->map[y + 1][x + 1] = ter_floor_hall;
+        d->hardness[y + 1][x + 1] = 0;
+      } else {
+        d->map[y + 1][x + 1] = ter_wall;
+        d->hardness[y + 1][x + 1] = gm[y][x];
+      }
+    }
+  }
+
+  for (x = 0; x < DUNGEON_X; x++) {
+    d->map[0][x] = ter_wall_immutable;
+    d->hardness[0][x] = 255;
+    d->map[DUNGEON_Y - 1][x] = ter_wall_immutable;
+    d->hardness[DUNGEON_Y - 1][x] = 255;
+  }
+  for (y = 1; y < DUNGEON_Y - 1; y++) {
+    d->map[y][0] = ter_wall_immutable;
+    d->hardness[y][0] = 255;
+    d->map[y][DUNGEON_X - 1] = ter_wall_immutable;
+    d->hardness[y][DUNGEON_X - 1] = 255;
+  }
+
+  return 0;
+}
+
+void render_hardness_map(dungeon *d)
+{
+  /* The hardness map includes coordinates, since it's larger *
+   * size makes it more difficult to index a position by eye. */
+  
+  pair_t p;
+  int i;
+  
+  putchar('\n');
+  printf("   ");
+  for (i = 0; i < DUNGEON_X; i++) {
+    printf("%2d", i);
+  }
+  putchar('\n');
+  for (p[dim_y] = 0; p[dim_y] < DUNGEON_Y; p[dim_y]++) {
+    printf("%2d ", p[dim_y]);
+    for (p[dim_x] = 0; p[dim_x] < DUNGEON_X; p[dim_x]++) {
+      printf("%02x", hardnesspair(p));
+    }
+    putchar('\n');
+  }
+}
+
+void render_movement_cost_map(dungeon *d)
+{
+  pair_t p;
+
+  putchar('\n');
+  for (p[dim_y] = 0; p[dim_y] < DUNGEON_Y; p[dim_y]++) {
+    for (p[dim_x] = 0; p[dim_x] < DUNGEON_X; p[dim_x]++) {
+      if (p[dim_x] ==  d->PC->position[dim_x] &&
+          p[dim_y] ==  d->PC->position[dim_y]) {
+        putchar('@');
+      } else {
+        if (hardnesspair(p) == 255) {
+          printf("X");
         } else {
-          npc_desc_t m;
-          m.speed = make_dice(speed);
-          m.hp = make_dice(hp);
-          m.dam = make_dice(dam);
-
-          m.name = name;
-          m.desc = desc;
-          for(int i = 0; i < 8; i++)
-          {
-            m.color[i] = color[i];
-          }
-
-          m.ability = ability;
-          m.symb = symb;
-          m.rarity = rarity;
-
-          monster_descriptions.push_back(m);
-          //cout << monster_descriptions.size() << endl;
+          printf("%d", (hardnesspair(p) / 85) + 1);
         }
       }
     }
-  }
-  else
-  {
-    cout << "Error: Invalid File Format" << endl;
+    putchar('\n');
   }
 }
 
-void parse_dice(std::string temp, int dice[3])
+void render_distance_map(dungeon *d)
 {
-  int i = 0, j = 0;
-  while(temp[i] != '+')
-  {
-    i++;
-  }
-  i++;
-  dice[0] = atoi(temp.substr(0, i - 1).c_str());
-  j = i;
-  while(temp[j] != 'd')
-  {
-    j++;
-  }
-  j++;
+  pair_t p;
 
-  dice[1] = atoi(temp.substr(i, j - i - 1).c_str());
-  dice[2] = atoi(temp.substr(j).c_str());
-}
-
-void print_monster_desc()
-{
-  int size = monster_descriptions.size();
-  cout << "\n" << endl;
-  for(int i = 0; i < size; i++)
-  {
-    cout << monster_descriptions[i].name << endl;
-    cout << monster_descriptions[i].desc << endl;
-
-    cout << monster_descriptions[i].symb << endl;
-
-    cout << get_colors(i, 1) << endl;
-
-    cout << monster_descriptions[i].speed.base << "+"
-      << monster_descriptions[i].speed.dice << "d"
-      << monster_descriptions[i].speed.sides << endl;
-
-    cout << get_abilities(i) << endl;
-
-    cout << monster_descriptions[i].hp.base << "+"
-      << monster_descriptions[i].hp.dice << "d"
-      << monster_descriptions[i].hp.sides << endl;
-
-    cout << monster_descriptions[i].dam.base << "+"
-      << monster_descriptions[i].dam.dice << "d"
-      << monster_descriptions[i].dam.sides << endl;
-
-    cout << monster_descriptions[i].rarity << endl;
-    cout << "\n" << endl;
-  }
-}
-
-void parse_items()
-{
-  string objFilePath = strcat(getenv("HOME"),"/.rlg327/object_desc.txt");
-  ifstream objFile(objFilePath);
-  // temp is current string being worked on
-  string temp;
-  // following are monster characteristics that are grabbed from the monster desc
-  string name;
-  string desc;
-  string type;
-  int color[8];
-  int weight[3];
-  int hit[3];
-  int dam[3];
-  int attr[3];
-  int val[3];
-  int dodge[3];
-  int def[3];
-  int speed[3];
-  string art;
-  int rarity;
-
-  // counter is number of characteristics parsed currently
-  int counter = 0;
-  getline(objFile, temp);
-  cout << temp << endl;
-
-  if(temp == "RLG327 OBJECT DESCRIPTION 1")
-  {
-    while(objFile.peek() != EOF) //goes until end of file
-    {
-      getline(objFile, temp);
-      if(temp == "BEGIN OBJECT")
-      {
-        // resets all attributes after each new desc 
-        desc = "";
-        counter = 0;
-        for(int i = 0; i < 8; i++)
-        {
-          color[i] = -1;
-        }
-
-        while(temp != "END")
-        {
-          getline(objFile, temp);
-          // gets the object name
-          if(temp.length() > 4 && temp.substr(0,4) == "NAME")
-          {
-            counter++;
-            name = temp.substr(5);
-            //cout << name << endl;
-          }
-          // gets the item type
-          if(temp.length() > 4 && temp.substr(0,4) == "TYPE") 
-          {
-            counter++;
-            type = temp.substr(5);
-            //cout << symb << endl;
-          }
-          // gets the object rarity
-          if(temp.length() > 4 && temp.substr(0,4) == "RRTY") 
-          {
-            counter++;
-            rarity = atoi(temp.substr(5).c_str());
-            //cout << rarity << endl;
-          }
-          // uses parse_dice to get object weight
-          if(temp.length() > 6 && temp.substr(0,6) == "WEIGHT")
-          {
-            counter++;
-            parse_dice(temp.substr(7), weight);
-            //cout << hp[0] << hp[1] << hp[2] << endl;
-          }
-          // uses parse_dice to get item damage
-          if(temp.length() > 3 && temp.substr(0,3) == "DAM")
-          {
-            counter++;
-            parse_dice(temp.substr(4), dam);
-            //cout << temp.substr(0,3) << temp.substr(4) << endl;
-          }
-          // uses parse_dice to get item speed
-          if(temp.length() > 5 && temp.substr(0,5) == "SPEED") 
-          {
-            counter++;
-            parse_dice(temp.substr(6), speed);
-            //cout << temp.substr(0,5) << temp.substr(6) << endl;
-          }
-          // parses through line word by word, and sets to equivalent integer
-          if(temp.length() > 5 && temp.substr(0,5) == "COLOR")
-          {
-            counter++;
-            int i = 6;
-            int lasti = i;
-            int colorIndex = 0;
-            int length = temp.length();
-            // gets characters until whitespace
-            while (i < length) {
-              while(temp[i] != ' ' && i < length){
-                i++;
-              }
-
-              if(temp.substr(lasti, i - lasti) == "BLACK"){
-                color[colorIndex++] = 0;
-              }
-              else if(temp.substr(lasti, i - lasti) == "RED"){
-                color[colorIndex++] = 1;
-              }
-              else if(temp.substr(lasti, i - lasti) == "GREEN"){
-                color[colorIndex++] = 2;
-              }
-              else if(temp.substr(lasti, i - lasti) == "YELLOW"){
-                color[colorIndex++] = 3;
-              }
-              else if(temp.substr(lasti, i - lasti) == "BLUE"){
-                color[colorIndex++] = 4;
-              }
-              else if(temp.substr(lasti, i - lasti) == "MAGENTA"){
-                color[colorIndex++] = 5;
-              }
-              else if(temp.substr(lasti, i - lasti) == "CYAN"){
-                color[colorIndex++] = 6;
-              }
-              else if(temp.substr(lasti, i - lasti) == "WHITE"){
-                color[colorIndex++] = 7;
-              }
-              else {
-                color[colorIndex++] = -1;
-              }
-              i++;
-              lasti = i;
-              //cout << temp.substr(6) << endl;
-            }
-
-          }
-          // uses parse_dice to get item art
-          if(temp.length() > 3 && temp.substr(0,3) == "HIT")
-          {
-            counter++;
-            parse_dice(temp.substr(4), hit);
-          }
-          // uses parse_dice to get item attributes
-          if(temp.length() > 4 && temp.substr(0,4) == "ATTR")
-          {
-            counter++;
-            parse_dice(temp.substr(5), attr);
-          }
-          // uses parse_dice to get item dodge
-          if(temp.length() > 5 && temp.substr(0,5) == "DODGE")
-          {
-            counter++;
-            parse_dice(temp.substr(6), dodge);
-          }
-          // uses parse_dice to get item defense
-          if(temp.length() > 3 && temp.substr(0,3) == "DEF")
-          {
-            counter++;
-            parse_dice(temp.substr(4), def);
-          }
-          // uses parse_dice to get item art
-          if(temp.length() > 3 && temp.substr(0,3) == "VAL")
-          {
-            counter++;
-            parse_dice(temp.substr(4), val);
-          }
-          // gets the object artifact status
-          if(temp.length() > 3 && temp.substr(0,3) == "ART")
-          {
-            counter++;
-            art = temp.substr(4);
-          }
-          // reads the next lines(77 chars max) until it encounters a singular ".", appends into desc string
-          if(temp == "DESC")
-          {
-            counter++;
-            getline(objFile, temp);
-            while (temp != ".") {
-              desc += "\n" + temp.substr(0, 77);
-              getline(objFile, temp);
-            }
-            desc = desc.substr(1);
-            //cout << desc << endl;
-          }
-        }
-        // if all characteristics are not set
-        if (counter != 14) {
-          cout << "Error: Invalid Object Description" << endl;
-        } else {
-          item_desc_t it;
-          it.type = type;
-          it.weight = make_dice(weight);
-          it.hit = make_dice(hit);
-          it.dam = make_dice(dam);
-          it.def = make_dice(def);
-          it.attr = make_dice(attr);
-          it.val = make_dice(val);
-          it.dodge = make_dice(dodge);
-          it.speed = make_dice(speed);	  
-          it.name = name;
-          it.desc = desc;
-          it.art = art;
-          it.rarity = rarity;
-
-          for(int i = 0; i < 8; i++)
-          {
-            it.color[i] = color[i];
-          }
-
-
-          item_descriptions.push_back(it);
-          //cout << monster_descriptions.size() << endl;
-        }
-      }
-    }
-  }
-  else
-  {
-    cout << "Error: Invalid File Format" << endl;
-  }
-}
-
-void print_item_desc()
-{
-  int size = item_descriptions.size();
-  cout << "\n" << endl;
-  for(int i = 0; i < size; i++)
-  {
-    cout << item_descriptions[i].name << endl;
-    cout << item_descriptions[i].desc << endl;
-
-    cout << item_descriptions[i].type << endl;
-
-    cout << get_colors(i, 0) << endl;
-
-    cout << item_descriptions[i].speed.base << "+"
-      << item_descriptions[i].speed.dice << "d"
-      << item_descriptions[i].speed.sides << endl;
-
-    cout << item_descriptions[i].weight.base << "+"
-      << item_descriptions[i].weight.dice << "d"
-      << item_descriptions[i].weight.sides << endl;
-
-    cout << item_descriptions[i].attr.base << "+"
-      << item_descriptions[i].attr.dice << "d"
-      << item_descriptions[i].attr.sides << endl;
-
-    cout << item_descriptions[i].val.base << "+"
-      << item_descriptions[i].val.dice << "d"
-      << item_descriptions[i].val.sides << endl;
-
-    cout << item_descriptions[i].dodge.base << "+"
-      << item_descriptions[i].dodge.dice << "d"
-      << item_descriptions[i].dodge.sides << endl;
-
-    cout << item_descriptions[i].def.base << "+"
-      << item_descriptions[i].def.dice << "d"
-      << item_descriptions[i].def.sides << endl;
-
-    cout << item_descriptions[i].art << endl;
-
-    cout << item_descriptions[i].hit.base << "+"
-      << item_descriptions[i].hit.dice << "d"
-      << item_descriptions[i].hit.sides << endl;
-
-    cout << item_descriptions[i].dam.base << "+"
-      << item_descriptions[i].dam.dice << "d"
-      << item_descriptions[i].dam.sides << endl;
-
-    cout << item_descriptions[i].rarity << endl;
-    cout << "\n" << endl;
-  }
-}
-
-dice_t make_dice(int temp[3])
-{
-  dice_t temp_dice;
-  temp_dice.base = temp[0];
-  temp_dice.dice = temp[1];
-  temp_dice.sides = temp[2];
-  return temp_dice;
-}
-
-std::string get_colors(int i, int toggle)
-{
-  string ret;
-  if (toggle){
-    for(int j = 0; j < 8; j++)
-    {
-      switch(monster_descriptions[i].color[j])
-      {
-        case 0:
-          ret += "BLACK ";
+  for (p[dim_y] = 0; p[dim_y] < DUNGEON_Y; p[dim_y]++) {
+    for (p[dim_x] = 0; p[dim_x] < DUNGEON_X; p[dim_x]++) {
+      if (p[dim_x] ==  d->PC->position[dim_x] &&
+          p[dim_y] ==  d->PC->position[dim_y]) {
+        putchar('@');
+      } else {
+        switch (mappair(p)) {
+        case ter_wall:
+        case ter_wall_immutable:
+          putchar(' ');
           break;
-        case 1:
-          ret += "RED ";
+        case ter_floor:
+        case ter_floor_room:
+        case ter_floor_hall:
+        case ter_stairs:
+        case ter_stairs_up:
+        case ter_stairs_down:
+          /* Placing X for infinity */
+          if (d->pc_distance[p[dim_y]][p[dim_x]] == UCHAR_MAX) {
+            putchar('X');
+          } else {
+            putchar('0' + d->pc_distance[p[dim_y]][p[dim_x]] % 10);
+          }
           break;
-        case 2:
-          ret += "GREEN ";
-          break;
-        case 3:
-          ret += "YELLOW ";
-          break;
-        case 4:
-          ret += "BLUE ";
-          break;
-        case 5:
-          ret += "MAGENTA ";
-          break;
-        case 6:
-          ret += "CYAN ";
-          break;
-        case 7:
-          ret += "WHITE ";
+        case ter_debug:
+          fprintf(stderr, "Debug character at %d, %d\n", p[dim_y], p[dim_x]);
+          putchar('*');
           break;
         default:
           break;
+        }
       }
     }
+    putchar('\n');
   }
-  else {
-    for(int j = 0; j < 8; j++)
-    {
-      switch(item_descriptions[i].color[j])
-      {
-        case 0:
-          ret += "BLACK ";
+}
+
+void render_tunnel_distance_map(dungeon *d)
+{
+  pair_t p;
+
+  for (p[dim_y] = 0; p[dim_y] < DUNGEON_Y; p[dim_y]++) {
+    for (p[dim_x] = 0; p[dim_x] < DUNGEON_X; p[dim_x]++) {
+      if (p[dim_x] ==  d->PC->position[dim_x] &&
+          p[dim_y] ==  d->PC->position[dim_y]) {
+        putchar('@');
+      } else {
+        switch (mappair(p)) {
+        case ter_wall_immutable:
+          putchar(' ');
           break;
-        case 1:
-          ret += "RED ";
+        case ter_wall:
+        case ter_floor:
+        case ter_floor_room:
+        case ter_floor_hall:
+        case ter_stairs:
+        case ter_stairs_up:
+        case ter_stairs_down:
+          /* Placing X for infinity */
+          if (d->pc_tunnel[p[dim_y]][p[dim_x]] == UCHAR_MAX) {
+            putchar('X');
+          } else {
+            putchar('0' + d->pc_tunnel[p[dim_y]][p[dim_x]] % 10);
+          }
           break;
-        case 2:
-          ret += "GREEN ";
-          break;
-        case 3:
-          ret += "YELLOW ";
-          break;
-        case 4:
-          ret += "BLUE ";
-          break;
-        case 5:
-          ret += "MAGENTA ";
-          break;
-        case 6:
-          ret += "CYAN ";
-          break;
-        case 7:
-          ret += "WHITE ";
+        case ter_debug:
+          fprintf(stderr, "Debug character at %d, %d\n", p[dim_y], p[dim_x]);
+          putchar('*');
           break;
         default:
           break;
+        }
       }
     }
+    putchar('\n');
   }
-
-  return ret;
 }
 
-std::string get_abilities(int i)
+void new_dungeon(dungeon *d)
 {
-  string ret;
-  //cout << monster_descriptions[i].ability << endl;
-  if(monster_descriptions[i].ability & BIT_SMART){
-    ret += "SMART ";
-  } if(monster_descriptions[i].ability & BIT_TELE){
-    ret += "TELE ";
-  } if(monster_descriptions[i].ability & BIT_TUN){
-    ret += "TUNNEL ";
-  } if(monster_descriptions[i].ability & BIT_ERAT){
-    ret += "ERRATIC ";
-  } if(monster_descriptions[i].ability & BIT_PASS){
-    ret += "PASS ";
-  } if(monster_descriptions[i].ability & BIT_PICKUP){
-    ret += "PICKUP ";
-  } if(monster_descriptions[i].ability & BIT_DESTROY){
-    ret += "DESTROY ";
-  } if(monster_descriptions[i].ability & BIT_UNIQ){
-    ret += "UNIQUE ";
-  } if(monster_descriptions[i].ability & BIT_BOSS){
-    ret += "BOSS ";
-  }
-  return ret;
+  uint32_t sequence_number;
+
+  sequence_number = d->character_sequence_number;
+
+  delete_dungeon(d);
+
+  init_dungeon(d);
+  gen_dungeon(d);
+  d->character_sequence_number = sequence_number;
+
+  place_pc(d);
+  d->character_map[d->PC->position[dim_y]][d->PC->position[dim_x]] = d->PC;
+
+  gen_monsters(d);
 }

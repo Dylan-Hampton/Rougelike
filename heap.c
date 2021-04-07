@@ -1,4 +1,3 @@
-//This code is borrowed from Sheaffer
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,34 +16,34 @@ struct heap_node {
 };
 
 #define swap(a, b) ({    \
-    typeof (a) _tmp = (a); \
-    (a) = (b);             \
-    (b) = _tmp;            \
-    })
+  typeof (a) _tmp = (a); \
+  (a) = (b);             \
+  (b) = _tmp;            \
+})
 
 #define splice_heap_node_lists(n1, n2) ({ \
-    if ((n1) && (n2)) {                     \
+  if ((n1) && (n2)) {                     \
     (n1)->next->prev = (n2)->prev;        \
     (n2)->prev->next = (n1)->next;        \
     (n1)->next = (n2);                    \
     (n2)->prev = (n1);                    \
-    }                                       \
-    })
+  }                                       \
+})
 
 #define insert_heap_node_in_list(n, l) ({ \
-    (n)->next = (l);                        \
-    (n)->prev = (l)->prev;                  \
-    (n)->prev->next = (n);                  \
-    (l)->prev = (n);                        \
-    })
+  (n)->next = (l);                        \
+  (n)->prev = (l)->prev;                  \
+  (n)->prev->next = (n);                  \
+  (l)->prev = (n);                        \
+})
 
 #define remove_heap_node_from_list(n) ({ \
-    (n)->next->prev = (n)->prev;           \
-    (n)->prev->next = (n)->next;           \
-    })
+  (n)->next->prev = (n)->prev;           \
+  (n)->prev->next = (n)->next;           \
+})
 
 void print_heap_node(heap_node_t *n, unsigned indent,
-    char *(*print)(const void *v))
+                     char *(*print)(const void *v))
 {
   heap_node_t *nc;
 
@@ -93,8 +92,8 @@ void print_heap_node_list(heap_node_t *n)
 }
 
 void heap_init(heap_t *h,
-    int32_t (*compare)(const void *key, const void *with),
-    void (*datum_delete)(void *))
+               int32_t (*compare)(const void *key, const void *with),
+               void (*datum_delete)(void *))
 {
   h->min = NULL;
   h->size = 0;
@@ -135,7 +134,7 @@ heap_node_t *heap_insert(heap_t *h, void *v)
 {
   heap_node_t *n;
 
-  assert((n = (heap_node_t *) calloc(1, sizeof (*n))));
+  assert((n = calloc(1, sizeof (*n))));
   n->datum = v;
 
   if (h->min) {
@@ -264,8 +263,8 @@ int heap_combine(heap_t *h, heap_t *h1, heap_t *h2)
     h->size = h1->size;
   } else {
     h->min = ((h->compare(h1->min->datum, h2->min->datum) < 0) ?
-        h1->min                                          :
-        h2->min);
+              h1->min                                          :
+              h2->min);
     splice_heap_node_lists(h1->min, h2->min);
   }
 
@@ -383,7 +382,7 @@ int main(int argc, char *argv[])
 
   print_heap(&h, print_int);
   printf("------------------------------------\n");
-
+  
   heap_remove_min(&h);
   assert((keys[0] = malloc(sizeof (*keys[0]))));
   *keys[0] = 0;
