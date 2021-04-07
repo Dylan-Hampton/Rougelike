@@ -127,7 +127,6 @@ class object_description {
            const bool artifact,
            const uint32_t rarity);
   object *get_object() {
-    dice hit, damage, dodge, defence, weight, speed, attribute, value;
     object *o = new object;
     o->name = name;
     o->symbol = object_symbol[type];

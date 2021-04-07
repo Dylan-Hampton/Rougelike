@@ -76,14 +76,23 @@ void gen_monsters(dungeon *d)
     heap_insert(&d->events, new_event(d, event_character_turn, m, 0));
   }
 
+  for(int r = 0; r < DUNGEON_Y; r++) {
+    for(int c = 0; c < DUNGEON_X; c++) {
+      d->object_map[r][c] = NULL;
+    }
+  }
+
+  int gen_object = 0;
   //object maker
-  for (i = 0; i < 10; i++) {
+  while (gen_object < 10) {
     int size = d->object_descriptions.size();
     int rand_desc = rand() % size;
     uint32_t rand_rarity = rand() % 100;
-    while ((d->object_descriptions[rand_desc].get_artifact()) && 
-          (d->object_descriptions[rand_desc].generated > 0) &&
-          d->object_descriptions[rand_desc].get_rarity() < rand_rarity) {
+    bool artifact_check = d->object_descriptions[rand_desc].get_artifact() && 
+      (d->object_descriptions[rand_desc].generated > 0);
+    while (d->object_descriptions[rand_desc].get_rarity() < rand_rarity && !artifact_check) { //rarity not correct && if (artifact
+      artifact_check = d->object_descriptions[rand_desc].get_artifact() && 
+        (d->object_descriptions[rand_desc].generated > 0);
       rand_desc = rand() % size;
       rand_rarity = rand() % 100;
     }
@@ -101,6 +110,7 @@ void gen_monsters(dungeon *d)
     o->position[dim_y] = p[dim_y];
     o->position[dim_x] = p[dim_x];
     d->object_map[p[dim_y]][p[dim_x]] = o;
+    gen_object++;
   }
 }
 

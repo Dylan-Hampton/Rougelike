@@ -1,52 +1,52 @@
-==8061== Memcheck, a memory error detector
-==8061== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==8061== Using Valgrind-3.16.1 and LibVEX; rerun with -h for copyright info
-==8061== Command: ./rlg327
-==8061== Parent PID: 6609
-==8061== 
-==8061== Conditional jump or move depends on uninitialised value(s)
-==8061==    at 0x11A1FE: gen_monsters(dungeon*) (npc.cpp:100)
-==8061==    by 0x10D65E: main (rlg327.cpp:215)
-==8061== 
-==8061== Conditional jump or move depends on uninitialised value(s)
-==8061==    at 0x11F948: io_display(dungeon*) (io.cpp:232)
-==8061==    by 0x10D66D: main (rlg327.cpp:217)
-==8061== 
-==8061== Use of uninitialised value of size 8
-==8061==    at 0x118445: can_see(dungeon*, short*, short*, int, int) (character.cpp:99)
-==8061==    by 0x11F9A2: io_display(dungeon*) (io.cpp:233)
-==8061==    by 0x10D66D: main (rlg327.cpp:217)
-==8061== 
-==8061== Invalid read of size 2
-==8061==    at 0x118445: can_see(dungeon*, short*, short*, int, int) (character.cpp:99)
-==8061==    by 0x11F9A2: io_display(dungeon*) (io.cpp:233)
-==8061==    by 0x10D66D: main (rlg327.cpp:217)
-==8061==  Address 0x7c is not stack'd, malloc'd or (recently) free'd
-==8061== 
-==8061== 
-==8061== Process terminating with default action of signal 11 (SIGSEGV)
-==8061==  Access not within mapped region at address 0x7C
-==8061==    at 0x118445: can_see(dungeon*, short*, short*, int, int) (character.cpp:99)
-==8061==    by 0x11F9A2: io_display(dungeon*) (io.cpp:233)
-==8061==    by 0x10D66D: main (rlg327.cpp:217)
-==8061==  If you believe this happened as a result of a stack
-==8061==  overflow in your program's main thread (unlikely but
-==8061==  possible), you can try to increase the size of the
-==8061==  main thread stack using the --main-stacksize= flag.
-==8061==  The main thread stack size used in this run was 8388608.
-==8061== 
-==8061== HEAP SUMMARY:
-==8061==     in use at exit: 180,522 bytes in 609 blocks
-==8061==   total heap usage: 16,319 allocs, 15,710 frees, 951,643 bytes allocated
-==8061== 
-==8061== LEAK SUMMARY:
-==8061==    definitely lost: 128 bytes in 1 blocks
-==8061==    indirectly lost: 363 bytes in 2 blocks
-==8061==      possibly lost: 0 bytes in 0 blocks
-==8061==    still reachable: 180,031 bytes in 606 blocks
-==8061==         suppressed: 0 bytes in 0 blocks
-==8061== Rerun with --leak-check=full to see details of leaked memory
-==8061== 
-==8061== Use --track-origins=yes to see where uninitialised values come from
-==8061== For lists of detected and suppressed errors, rerun with: -s
-==8061== ERROR SUMMARY: 795 errors from 4 contexts (suppressed: 0 from 0)
+==1667== Memcheck, a memory error detector
+==1667== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==1667== Using Valgrind-3.16.1 and LibVEX; rerun with -h for copyright info
+==1667== Command: ./rlg327
+==1667== Parent PID: 1271
+==1667== 
+==1667== Conditional jump or move depends on uninitialised value(s)
+==1667==    at 0x11A277: gen_monsters(dungeon*) (npc.cpp:102)
+==1667==    by 0x10D65E: main (rlg327.cpp:215)
+==1667== 
+==1667== Conditional jump or move depends on uninitialised value(s)
+==1667==    at 0x11F94C: io_display(dungeon*) (io.cpp:232)
+==1667==    by 0x10D66D: main (rlg327.cpp:217)
+==1667== 
+==1667== Use of uninitialised value of size 8
+==1667==    at 0x118445: can_see(dungeon*, short*, short*, int, int) (character.cpp:99)
+==1667==    by 0x11F9A6: io_display(dungeon*) (io.cpp:233)
+==1667==    by 0x10D66D: main (rlg327.cpp:217)
+==1667== 
+==1667== Invalid read of size 2
+==1667==    at 0x118445: can_see(dungeon*, short*, short*, int, int) (character.cpp:99)
+==1667==    by 0x11F9A6: io_display(dungeon*) (io.cpp:233)
+==1667==    by 0x10D66D: main (rlg327.cpp:217)
+==1667==  Address 0x7c is not stack'd, malloc'd or (recently) free'd
+==1667== 
+==1667== 
+==1667== Process terminating with default action of signal 11 (SIGSEGV)
+==1667==  Access not within mapped region at address 0x7C
+==1667==    at 0x118445: can_see(dungeon*, short*, short*, int, int) (character.cpp:99)
+==1667==    by 0x11F9A6: io_display(dungeon*) (io.cpp:233)
+==1667==    by 0x10D66D: main (rlg327.cpp:217)
+==1667==  If you believe this happened as a result of a stack
+==1667==  overflow in your program's main thread (unlikely but
+==1667==  possible), you can try to increase the size of the
+==1667==  main thread stack using the --main-stacksize= flag.
+==1667==  The main thread stack size used in this run was 8388608.
+==1667== 
+==1667== HEAP SUMMARY:
+==1667==     in use at exit: 180,176 bytes in 606 blocks
+==1667==   total heap usage: 16,505 allocs, 15,899 frees, 906,609 bytes allocated
+==1667== 
+==1667== LEAK SUMMARY:
+==1667==    definitely lost: 256 bytes in 2 blocks
+==1667==    indirectly lost: 169 bytes in 3 blocks
+==1667==      possibly lost: 0 bytes in 0 blocks
+==1667==    still reachable: 179,751 bytes in 601 blocks
+==1667==         suppressed: 0 bytes in 0 blocks
+==1667== Rerun with --leak-check=full to see details of leaked memory
+==1667== 
+==1667== Use --track-origins=yes to see where uninitialised values come from
+==1667== For lists of detected and suppressed errors, rerun with: -s
+==1667== ERROR SUMMARY: 793 errors from 4 contexts (suppressed: 0 from 0)
