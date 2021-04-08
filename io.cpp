@@ -306,7 +306,22 @@ void io_display_no_fog(dungeon *d)
   for (y = 0; y < 21; y++) {
     for (x = 0; x < 80; x++) {
       if (d->character_map[y][x]) {
-        mvaddch(y + 1, x, d->character_map[y][x]->symbol);
+          if (d->character_map[y][x]->symbol != '@') {
+              attron(COLOR_PAIR(static_cast<npc*>(d->character_map[y][x])->color.at(0)));
+              mvaddch(y + 1, x,
+                  character_get_symbol(d->character_map[y][x]));
+              attroff(COLOR_PAIR(static_cast<npc*>(d->character_map[y][x])->color.at(0)));
+          } else {
+              attron(COLOR_PAIR(COLOR_WHITE));
+              mvaddch(y + 1, x,
+                  character_get_symbol(d->character_map[y][x]));
+              attroff(COLOR_PAIR(COLOR_WHITE));
+          }
+      } else if (d->object_map[y][x]) {
+        attron(COLOR_PAIR(static_cast<object*>(d->object_map[y][x])->color));
+        mvaddch(y + 1, x,
+            d->object_map[y][x]->symbol);
+        attroff(COLOR_PAIR(static_cast<object*>(d->object_map[y][x])->color));
       } else {
         switch (mapxy(x, y)) {
           case ter_wall:

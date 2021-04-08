@@ -1,3 +1,4 @@
+4/8/21 BN/DH: Made the no fog show all monsters and items in color
 4/7/21 BN/DH: Finished object generation and deallocated the objects after the dungeon is deleted
 4/6/21 BN/DH: Made monster generation from vectors and started object generation, added color printing
 4/3/21 BN/DH: changed monster generation to be from desc, added monster factory
