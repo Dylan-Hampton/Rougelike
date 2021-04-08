@@ -1,0 +1,41 @@
+4/7/21 BN/DH: Finished object generation and deallocated the objects after the dungeon is deleted
+4/6/21 BN/DH: Made monster generation from vectors and started object generation, added color printing
+4/3/21 BN/DH: changed monster generation to be from desc, added monster factory
+3/30/21 BN/DH: Finished abilities, desc, added dice and description classes, added print function for parser //1.07 assignment done 
+3/29/21 BN/DH/CB: Finished color, damage, hp, and speed. Still need to do description
+3/24/21 BN: fixed the bug where you could teleport onto yourself
+3/23/21 BN/DH/CB: finished everything for 1.06 (fixed fog of war, fixed teleporting onto a monster, implemented random teleportation) //1.06 assignment done
+3/22/21 BN/DH/CB: Worked on telport mechanic, finished targeting mode, sometimes Z's show up in the fog of war mode and we don't know why, also need to fix teleporting onto a monster
+3/21/21 CB: Started the teleportation mechanic, just the random.
+3/20/21 BN/DH: Changed all .c files (except for heap.c) to .cpp, fixed any errors, added fog of war, added f key, which shows the entire screen
+3/11/21 BN: Deleted save and load functions, and added comments to the main game loop
+3/09/21 BN/DH: Updated scroll for monster list and added prefixes to the monster names, fixed bug where number of monsters in monster list didn't match alive monsters. //1.05 assignment done
+3/09/21 BN: Added so that if there is an invalid input, monsters will not move, made it so it updates the amount of data allocated for monster_list in update_monster_list
+3/09/21 DH: Added scroll functionality to monster list
+3/08/21 DH/BN/CB: Added reserve for line 0 for text messages, added monster display
+3/06/21 DH/BN: Added EPIC player win screen, added player_movement.c which contains both methods to move player, stopped monsters from moving onto stairs, added update_monster_list
+3/05/2021 BN: Added spawn_new_dungeon method to make a new dungeon without having to call a million methods. also implemented ncurses version print_dungeon, made the player movement fully functional, added stairs functionality (does not remember previous dungeons), added quit button
+3/03/2021 DH/BN: Added corridor creation when monster moves through rock, added monster deaths, added player lose case, refactored variable names, bug fixed, and added EPIC ending screen, added erratic and dumb characterisitic //1.04 assignment done
+3/02/2021 DH/BN: modified entities to be based on 2d array, modified print statement, fixed heap initialization and next_turn, got telepathic monsters to move the way they are supposed to
+3/01/2021 DH/BN/CB: Added randomness to monster generation and added generate_entities_heap, started on next_turn
+2/28/2021 DH/BN: Added create_entities method and added monster generation
+2/22/2021 DH/BN/CB: Added print distance maps function in dungeon.c, and bugtested //1.03 assignment done
+2/21/2021 DH/BN: Implemented distance map in path_finding.c for both tunneling and non-tunneling monsters
+2/21/2021 DH/BN: Added dungeon.h, added path_finding.c, heap.c, heap.h
+2/17/2021 DH/BN/CB: Added endianess //1.02 assignment done
+2/17/2021 BN: fixed saving and loading the arrays, and fixed loading rooms from a file
+2/17/2021 DH/BN/CB: Worked on correcting load_dungeon
+2/16/2021 DH: Completed save dungeon, working on tracing segfaults in read dungeon
+2/15/2021 DH/BN/CB: Worked on getting save dungeon complete, still need to trace some seg faults
+2/15/2021 DH: Added PC struct and fixed some bugs with save_dungeon, added up to num_rooms in load_dungeon
+2/14/2021 DH: Restructured room code in favor of using a struct and added dungeon_hardness and num_rooms writes in save_dungeon
+2/13/2021 DH: Added parallel 2d array for storing hardness factor
+2/12/2021 BN: Added create_player and cleaned up save and load tag setting
+2/11/2021 DH: Added save / load tag checks and set up save_dungeon and load_dungeon skeletons
+2/8/2021 BN/DH: Added simple path generation // 1.01 assignment done
+2/5/2021 BN: Added stair generation and fixed some bugs
+2/5/2021 DH: Added a check to avoid two rooms touching
+2/4/2021 DH: Created Makefile and changed formatting.
+2/4/2021 CB: Set up code, made create_rooms method, set_dungeon method, and
+print_dungeon method.
+
