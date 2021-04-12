@@ -378,6 +378,18 @@ void io_display_no_fog(dungeon *d)
   io_print_message_queue(0, 0);
 }
 
+void io_list_pc_inv(dungeon *d) {
+  //TODO
+}
+
+void io_list_pc_wearing(dungeon *d) {
+  //TODO
+}
+
+void io_inspect_item(dungeon *d, int slot) {
+  //TODO
+}
+
 void io_display_monster_list(dungeon *d)
 {
   mvprintw(11, 33, " HP:    XXXXX ");
@@ -764,9 +776,6 @@ void io_handle_input(dungeon *d)
         io_display(d);
         fail_code = 1;
         break;
-      case 'L':
-        fail_code = 1;
-        break;
       case 'g':
         /* Teleport the PC to a random place in the dungeon.              */
         io_teleport_pc(d);
@@ -778,6 +787,38 @@ void io_handle_input(dungeon *d)
         break;
       case 'm':
         io_list_monsters(d);
+        fail_code = 1;
+        break;
+      case 'w':
+        pc_wear_item(d->PC, 0);
+        fail_code = 1;
+        break;
+      case 't':
+        pc_remove_item(d->PC, 0);
+        fail_code = 1;
+        break;
+      case 'd':
+        pc_drop_item(d->PC, d, 0);
+        fail_code = 1;
+        break;
+      case 'x':
+        pc_expunge_item(d->PC, 0);
+        fail_code = 1;
+        break;
+      case 'i':
+        io_list_pc_inv(d);
+        fail_code = 1;
+        break;
+      case 'e':
+        io_list_pc_wearing(d);
+        fail_code = 1;
+        break;
+      case 'I':
+        io_inspect_item(d, 0);
+        fail_code = 1;
+        break;
+      case 'L':
+        //looking at monster
         fail_code = 1;
         break;
       case 'q':

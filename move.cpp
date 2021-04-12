@@ -149,6 +149,7 @@ void do_moves(dungeon *d)
     e->sequence = 0;
     e->c = d->PC;
     heap_insert(&d->events, e);
+    pc_grab_item(d->PC, d);
   }
 
   while (pc_is_alive(d) &&

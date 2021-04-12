@@ -3,6 +3,9 @@
 
 class dungeon;
 
+void io_list_pc_inv(dungeon *d);
+void io_list_pc_wearing(dungeon *d);
+void io_inspect_item(dungeon *d, int slot);
 void io_init_terminal(void);
 void io_reset_terminal(void);
 void io_display(dungeon *d);

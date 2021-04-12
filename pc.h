@@ -9,10 +9,17 @@
 
 class pc : public character {
  public:
+  std::vector<object> wearing;
+  std::vector<object> inventory;
   terrain_type known_terrain[DUNGEON_Y][DUNGEON_X];
   uint8_t visible[DUNGEON_Y][DUNGEON_X];
 };
 
+void pc_expunge_item(pc *pc, int slot);
+int pc_remove_item(pc *pc, int slot);
+int pc_wear_item(pc *pc, int slot);
+int pc_drop_item(pc *pc, dungeon *d, int slot);
+int pc_grab_item(pc *pc, dungeon *d);
 void pc_delete(pc *pc);
 uint32_t pc_is_alive(dungeon *d);
 void config_pc(dungeon *d);

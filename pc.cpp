@@ -14,6 +14,51 @@ uint32_t pc_is_alive(dungeon *d)
   return d->PC->alive;
 }
 
+void pc_expunge_item(pc *pc, int slot) {
+  object *item = &pc->wearing[slot];
+  pc->wearing.erase(pc->wearing.begin() + slot);
+  delete item;
+}
+
+int pc_remove_item(pc *pc, int slot) {
+  //basiaclly opposite of wear item
+  return 0;
+}
+
+int pc_wear_item(pc *pc, int slot) {
+  //get type
+  //char type = 
+  //check if already has type(special case for rings < 2)
+  //brings item from inv to wearing
+  return 0;
+}
+
+int pc_drop_item(pc *pc, dungeon *d, int slot) {
+  int size = pc->inventory.size();
+  if (d->object_map[character_get_y(pc)][character_get_x(pc)]) {
+    return -1; // item on the ground
+  } else if (slot >= size) {
+    return 1; // no item at slot
+  } else {
+    d->object_map[character_get_y(pc)][character_get_x(pc)] = &pc->inventory[slot];
+    pc->inventory.erase(pc->inventory.begin() + slot);
+    return 0;
+  } 
+}
+
+int pc_grab_item(pc *pc, dungeon *d) { //works, and tested
+  int size = pc->inventory.size();
+  if (!d->object_map[character_get_y(pc)][character_get_x(pc)]) {
+    return -1; // no item on the ground
+  } else if (size >= 10) {
+    return 1; //no inventory space;
+  } else {
+    pc->inventory.push_back(*d->object_map[character_get_y(pc)][character_get_x(pc)]);
+    d->object_map[character_get_y(pc)][character_get_x(pc)] = NULL;
+    return 0;
+  }
+}
+
 void place_pc(dungeon *d)
 {
   d->PC->position[dim_y] = rand_range(d->rooms->position[dim_y],
