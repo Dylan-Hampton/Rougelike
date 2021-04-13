@@ -109,8 +109,9 @@ public:
     value = o.value;
     artifact = o.artifact;
     rarity = o.rarity;
-    position[0] = o.position[0];
-    position[1] = o.position[1];
+    for (int i = 0; i < 2; i++) {
+      position[i] = o.position[i];
+    }
   }
 };
 
