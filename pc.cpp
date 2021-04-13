@@ -40,7 +40,8 @@ int pc_drop_item(pc *pc, dungeon *d, int slot) {
   } else if (slot >= size) {
     return 1; // no item at slot
   } else {
-    d->object_map[character_get_y(pc)][character_get_x(pc)] = &pc->inventory[slot];
+    object *item = new object(pc->inventory[slot]);
+    d->object_map[character_get_y(pc)][character_get_x(pc)] = item; 
     pc->inventory.erase(pc->inventory.begin() + slot);
     return 0;
   } 

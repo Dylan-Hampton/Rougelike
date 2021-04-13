@@ -91,6 +91,27 @@ public:
   bool artifact;
   uint32_t rarity;
   pair_t position;
+  object() {
+
+  }
+  object(const object& o) {
+    name = o.name;
+    description = o.description;
+    symbol = o.symbol;
+    color = o.color;
+    damage= o.damage;
+    hit= o.hit;
+    dodge = o.dodge;
+    defence = o.defence;
+    weight = o.weight;
+    speed = o.speed;
+    attribute = o.attribute;
+    value = o.value;
+    artifact = o.artifact;
+    rarity = o.rarity;
+    position[0] = o.position[0];
+    position[1] = o.position[1];
+  }
 };
 
 class object_description {

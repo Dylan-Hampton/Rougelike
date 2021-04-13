@@ -379,11 +379,33 @@ void io_display_no_fog(dungeon *d)
 }
 
 void io_list_pc_inv(dungeon *d) {
-  //TODO
+  clear();
+  mvprintw(0, 15, "Player Inventory");
+  for (int i = 0; i < 10; i++) {
+    int size = d->PC->inventory.size(); 
+    if (i < size) {
+      mvprintw(i + 2, 15, d->PC->inventory[i].name.c_str());
+    } else {
+      mvprintw(i + 2, 15, "empty slot");
+    }
+  }
+  mvprintw(13, 15, "Press any key to leave");
+  refresh();
 }
 
 void io_list_pc_wearing(dungeon *d) {
-  //TODO
+  clear();
+  mvprintw(0, 15, "Player Gear");
+  for (int i = 0; i < 10; i++) {
+    int size = d->PC->wearing.size(); 
+    if (i < size) {
+      mvprintw(i + 2, 15, d->PC->wearing[i].name.c_str());
+    } else {
+      mvprintw(i + 2, 15, "empty slot");
+    }
+  }
+  mvprintw(13, 15, "Press any key to leave");
+  refresh();
 }
 
 void io_inspect_item(dungeon *d, int slot) {

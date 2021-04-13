@@ -1,3 +1,4 @@
+4/13/21 BN/DH: made displays for player inventory and gear, fixed duplication bug, but dropping items now sometimes doesn't display
 4/12/21 BN/DH/CB: in pc.cpp we made pc_grab_item that picks up the item and puts it into inv, testing phase for all item management methods, need to fix duping bug with dropping items
 4/8/21 BN/DH: Made the no fog show all monsters and items in color
 4/7/21 BN/DH: Finished object generation and deallocated the objects after the dungeon is deleted
