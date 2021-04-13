@@ -380,7 +380,7 @@ void io_display_no_fog(dungeon *d)
 
 void io_list_pc_inv(dungeon *d) {
   clear();
-  mvprintw(0, 15, "Player Inventory");
+   mvprintw(0, 15, "Player Inventory");
   for (int i = 0; i < 10; i++) {
     int size = d->PC->inventory.size(); 
     if (i < size) {
@@ -718,6 +718,7 @@ void io_handle_input(dungeon *d)
 {
   uint32_t fail_code;
   int key;
+  char input;
 
   do {
     switch (key = getch()) {
@@ -812,19 +813,35 @@ void io_handle_input(dungeon *d)
         fail_code = 1;
         break;
       case 'w':
-        pc_wear_item(d->PC, 0);
+        mvprintw(0, 0, "Pick an item to wear from inv (0-9)");
+        refresh();
+        input = getch();
+        mvprintw(0, 0, "");
+        pc_wear_item(d->PC, input - '0');
         fail_code = 1;
         break;
       case 't':
-        pc_remove_item(d->PC, 0);
+        mvprintw(0, 0, "Pick an item to remove from gear (0-9)");
+        refresh();
+        input = getch();
+        mvprintw(0, 0, "");
+        pc_remove_item(d->PC, input - '0');
         fail_code = 1;
         break;
       case 'd':
-        pc_drop_item(d->PC, d, 0);
+        mvprintw(0, 0, "Pick an item to drop on the ground (0-9)");
+        refresh();
+        input = getch();
+        mvprintw(0, 0, "");
+        pc_drop_item(d->PC, d, input - '0');
         fail_code = 1;
         break;
       case 'x':
-        pc_expunge_item(d->PC, 0);
+        mvprintw(0, 0, "Pick an item to expunge from inv (0-9)");
+        refresh();
+        input = getch();
+        mvprintw(0, 0, "");
+        pc_expunge_item(d->PC, input - '0');
         fail_code = 1;
         break;
       case 'i':

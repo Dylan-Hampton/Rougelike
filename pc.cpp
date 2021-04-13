@@ -15,7 +15,7 @@ uint32_t pc_is_alive(dungeon *d)
 }
 
 void pc_expunge_item(pc *pc, int slot) { 
-  if (pc->inventory.size() > 0) {
+  if (slot > 0 && pc->inventory.size() > 0) {
     pc->inventory.erase(pc->inventory.begin() + slot);
   }
 }
@@ -23,7 +23,7 @@ void pc_expunge_item(pc *pc, int slot) {
 int pc_remove_item(pc *pc, int slot) {
   int inv_size = pc->inventory.size();
   int wear_size = pc->wearing.size();
-  if (slot < wear_size && inv_size < 10) {
+  if (slot > 0 && slot < wear_size && inv_size < 10) {
     pc->inventory.push_back(pc->wearing[slot]);
     pc->wearing.erase(pc->wearing.begin() + slot);
     return 0;
@@ -34,7 +34,7 @@ int pc_remove_item(pc *pc, int slot) {
 int pc_wear_item(pc *pc, int slot) {
   int inv_size = pc->inventory.size();
   int wear_size = pc->wearing.size();
-  if (slot < inv_size && wear_size < 10) {
+  if (slot > 0 && slot < inv_size && wear_size < 10) {
     pc->wearing.push_back(pc->inventory[slot]);
     pc->inventory.erase(pc->inventory.begin() + slot);
     return 0;
