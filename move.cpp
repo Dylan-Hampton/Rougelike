@@ -79,6 +79,9 @@ void do_combat(dungeon *d, character *atk, character *def)
 
   if (atk == d->PC) {
     io_queue_message("You smite the %c!", def->symbol);
+    if (((npc *) def)->characteristics & NPC_BOSS && atk == d->PC) {
+      d->PC->boss_kills++;
+    }
   }
 
   can_see_atk = can_see(d, character_get_pos(d->PC),

@@ -13,8 +13,10 @@ class pc : public character {
   std::vector<object> inventory;
   terrain_type known_terrain[DUNGEON_Y][DUNGEON_X];
   uint8_t visible[DUNGEON_Y][DUNGEON_X];
+  int boss_kills = 0;
 };
 
+int pc_has_killed_boss(dungeon *d);
 void pc_expunge_item(pc *pc, int slot);
 int pc_remove_item(pc *pc, int slot);
 int pc_wear_item(pc *pc, int slot);

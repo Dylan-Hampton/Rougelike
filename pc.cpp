@@ -14,6 +14,10 @@ uint32_t pc_is_alive(dungeon *d)
   return d->PC->alive;
 }
 
+int pc_has_killed_boss(dungeon *d) {
+  return d->PC->boss_kills; 
+}
+
 void pc_expunge_item(pc *pc, int slot) { 
   if (slot > 0 && pc->inventory.size() > 0) {
     pc->inventory.erase(pc->inventory.begin() + slot);
