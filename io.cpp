@@ -384,7 +384,9 @@ void io_list_pc_inv(dungeon *d) {
   for (int i = 0; i < 10; i++) {
     int size = d->PC->inventory.size(); 
     if (i < size) {
+      attron(COLOR_PAIR(d->PC->inventory[i].color));
       mvprintw(i + 2, 15, d->PC->inventory[i].name.c_str());
+      attroff(COLOR_PAIR(d->PC->inventory[i].color));
     } else {
       mvprintw(i + 2, 15, "empty slot");
     }
@@ -399,7 +401,9 @@ void io_list_pc_wearing(dungeon *d) {
   for (int i = 0; i < 10; i++) {
     int size = d->PC->wearing.size(); 
     if (i < size) {
+      attron(COLOR_PAIR(d->PC->inventory[i].color));
       mvprintw(i + 2, 15, d->PC->wearing[i].name.c_str());
+      attroff(COLOR_PAIR(d->PC->inventory[i].color));
     } else {
       mvprintw(i + 2, 15, "empty slot");
     }
@@ -409,7 +413,28 @@ void io_list_pc_wearing(dungeon *d) {
 }
 
 void io_inspect_item(dungeon *d, int slot) {
-  //TODO
+  clear();
+  int size = d->PC->inventory.size(); 
+  mvprintw(0, 15, "Player Inventory");
+  for (int i = 0; i < 10; i++) {
+    if (i < size) {
+      attron(COLOR_PAIR(d->PC->inventory[i].color));
+      mvprintw(i + 2, 15, d->PC->inventory[i].name.c_str());
+      attroff(COLOR_PAIR(d->PC->inventory[i].color));
+    } else {
+      mvprintw(i + 2, 15, "empty slot");
+    }
+  }
+  mvprintw(13, 15, "Press key (0-9) to look at item");
+  refresh();
+  int input = getch();
+  clear();
+  if (input - '0' >= 0 && input - '0' < size) {
+    attron(COLOR_PAIR(d->PC->inventory[input - '0'].color));
+    mvprintw(0, 0, d->PC->inventory[input - '0'].name.c_str());
+    attroff(COLOR_PAIR(d->PC->inventory[input - '0'].color));
+    mvprintw(1, 0, d->PC->inventory[input - '0'].description.c_str());
+  }
 }
 
 void io_display_monster_list(dungeon *d)
