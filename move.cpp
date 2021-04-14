@@ -53,7 +53,7 @@ void do_combat(dungeon *d, character *atk, character *def)
   int part;
   int attack_roll = atk->damage.roll();
 
-  if (def->alive) {
+  if (def->alive && (atk == d->PC || def == d->PC)) {
     if (attack_roll >= def->hitpoints) {
       def->alive = 0;
       charpair(def->position) = NULL;
