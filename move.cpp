@@ -44,62 +44,66 @@ void do_combat(dungeon *d, character *atk, character *def)
     "spleen",                  /* 22 */
     "ganglia",                 /* 23 */
     "ear",                     /* 24 */
-    "subcutaneous tissue"      /* 25 */
+    "subcutaneous tissue",      /* 25 */
     "cerebellum",              /* 26 */ /* Brain parts begin here */
     "hippocampus",             /* 27 */
     "frontal lobe",            /* 28 */
     "brain",                   /* 29 */
   };
   int part;
+  int attack_roll = atk->damage.roll();
 
   if (def->alive) {
-    def->alive = 0;
-    charpair(def->position) = NULL;
-    
-    if (def != d->PC) {
-      d->num_monsters--;
-    } else {
-      if ((part = rand() % (sizeof (organs) / sizeof (organs[0]))) < 26) {
-        io_queue_message("As the %c eats your %s, "
-                         "you wonder if there is an afterlife.",
-                         atk->symbol, organs[part]);
+    if (attack_roll >= def->hitpoints) {
+      def->alive = 0;
+      charpair(def->position) = NULL;
+
+      if (def != d->PC) {
+        d->num_monsters--;
       } else {
-        io_queue_message("Your last thoughts fade away as "
-                         "the %c eats your %s...",
-                         atk->symbol, organs[part]);
+        if ((part = rand() % (sizeof (organs) / sizeof (organs[0]))) < 26) {
+          io_queue_message("As the %c eats your %s, "
+              "you wonder if there is an afterlife.",
+              atk->symbol, organs[part]);
+        } else {
+          io_queue_message("Your last thoughts fade away as "
+              "the %c eats your %s...",
+              atk->symbol, organs[part]);
+        }
+        /* Queue an empty message, otherwise the game will not pause for *
+         * player to see above.                                          */
+        io_queue_message("");
       }
-      /* Queue an empty message, otherwise the game will not pause for *
-       * player to see above.                                          */
-      io_queue_message("");
-    }
-    atk->kills[kill_direct]++;
-    atk->kills[kill_avenged] += (def->kills[kill_direct] +
-                                  def->kills[kill_avenged]);
-  }
+      atk->kills[kill_direct]++;
+      atk->kills[kill_avenged] += (def->kills[kill_direct] +
+          def->kills[kill_avenged]);
+      if (((npc *) def)->characteristics & NPC_BOSS && atk == d->PC) {
+        d->PC->boss_kills++;
+      }
 
-  if (atk == d->PC) {
-    io_queue_message("You smite the %c!", def->symbol);
-    if (((npc *) def)->characteristics & NPC_BOSS && atk == d->PC) {
-      d->PC->boss_kills++;
-    }
-  }
+      can_see_atk = can_see(d, character_get_pos(d->PC),
+          character_get_pos(atk), 1, 0);
+      can_see_def = can_see(d, character_get_pos(d->PC),
+          character_get_pos(def), 1, 0);
 
-  can_see_atk = can_see(d, character_get_pos(d->PC),
-                        character_get_pos(atk), 1, 0);
-  can_see_def = can_see(d, character_get_pos(d->PC),
-                        character_get_pos(def), 1, 0);
+      if (atk != d->PC && def != d->PC) {
+        if (can_see_atk && !can_see_def) {
+          io_queue_message("The %c callously murders some poor, "
+              "defenseless creature.", atk->symbol);
+        }
+        if (can_see_def && !can_see_atk) {
+          io_queue_message("Something kills the helpless %c.", def->symbol);
+        }
+        if (can_see_atk && can_see_def) {
+          io_queue_message("You watch in abject horror as the %c "
+              "gruesomely murders the %c!", atk->symbol, def->symbol);
+        }
+      }
+    }
 
-  if (atk != d->PC && def != d->PC) {
-    if (can_see_atk && !can_see_def) {
-      io_queue_message("The %c callously murders some poor, "
-                       "defenseless creature.", atk->symbol);
-    }
-    if (can_see_def && !can_see_atk) {
-      io_queue_message("Something kills the helpless %c.", def->symbol);
-    }
-    if (can_see_atk && can_see_def) {
-      io_queue_message("You watch in abject horror as the %c "
-                       "gruesomely murders the %c!", atk->symbol, def->symbol);
+    if (atk == d->PC) {
+      io_queue_message("You smite the %c for %d damage!", def->symbol, attack_roll);
+      def->hitpoints -= attack_roll;
     }
   }
 }
@@ -156,8 +160,8 @@ void do_moves(dungeon *d)
   }
 
   while (pc_is_alive(d) &&
-         (e = (event *) heap_remove_min(&d->events)) &&
-         ((e->type != event_character_turn) || (e->c != d->PC))) {
+      (e = (event *) heap_remove_min(&d->events)) &&
+      ((e->type != event_character_turn) || (e->c != d->PC))) {
     d->time = e->time;
     if (e->type == event_character_turn) {
       c = e->c;
@@ -206,13 +210,13 @@ void dir_nearest_wall(dungeon *d, character *c, pair_t dir)
 uint32_t against_wall(dungeon *d, character *c)
 {
   return ((mapxy(c->position[dim_x] - 1,
-                 c->position[dim_y]    ) == ter_wall_immutable) ||
-          (mapxy(c->position[dim_x] + 1,
-                 c->position[dim_y]    ) == ter_wall_immutable) ||
-          (mapxy(c->position[dim_x]    ,
-                 c->position[dim_y] - 1) == ter_wall_immutable) ||
-          (mapxy(c->position[dim_x]    ,
-                 c->position[dim_y] + 1) == ter_wall_immutable));
+          c->position[dim_y]    ) == ter_wall_immutable) ||
+      (mapxy(c->position[dim_x] + 1,
+             c->position[dim_y]    ) == ter_wall_immutable) ||
+      (mapxy(c->position[dim_x]    ,
+             c->position[dim_y] - 1) == ter_wall_immutable) ||
+      (mapxy(c->position[dim_x]    ,
+             c->position[dim_y] + 1) == ter_wall_immutable));
 }
 
 uint32_t in_corner(dungeon *d, character *c)
@@ -222,13 +226,13 @@ uint32_t in_corner(dungeon *d, character *c)
   num_immutable = 0;
 
   num_immutable += (mapxy(c->position[dim_x] - 1,
-                          c->position[dim_y]    ) == ter_wall_immutable);
+        c->position[dim_y]    ) == ter_wall_immutable);
   num_immutable += (mapxy(c->position[dim_x] + 1,
-                          c->position[dim_y]    ) == ter_wall_immutable);
+        c->position[dim_y]    ) == ter_wall_immutable);
   num_immutable += (mapxy(c->position[dim_x]    ,
-                          c->position[dim_y] - 1) == ter_wall_immutable);
+        c->position[dim_y] - 1) == ter_wall_immutable);
   num_immutable += (mapxy(c->position[dim_x]    ,
-                          c->position[dim_y] + 1) == ter_wall_immutable);
+        c->position[dim_y] + 1) == ter_wall_immutable);
 
   return num_immutable > 1;
 }
@@ -239,12 +243,12 @@ static void new_dungeon_level(dungeon *d, uint32_t dir)
    * For now, simply generate a new dungeon.                  */
 
   switch (dir) {
-  case '<':
-  case '>':
-    new_dungeon(d);
-    break;
-  default:
-    break;
+    case '<':
+    case '>':
+      new_dungeon(d);
+      break;
+    default:
+      break;
   }
 }
 
@@ -268,48 +272,48 @@ uint32_t move_pc(dungeon *d, uint32_t dir)
 
 
   switch (dir) {
-  case 1:
-  case 2:
-  case 3:
-    next[dim_y]++;
-    break;
-  case 4:
-  case 5:
-  case 6:
-    break;
-  case 7:
-  case 8:
-  case 9:
-    next[dim_y]--;
-    break;
+    case 1:
+    case 2:
+    case 3:
+      next[dim_y]++;
+      break;
+    case 4:
+    case 5:
+    case 6:
+      break;
+    case 7:
+    case 8:
+    case 9:
+      next[dim_y]--;
+      break;
   }
   switch (dir) {
-  case 1:
-  case 4:
-  case 7:
-    next[dim_x]--;
-    break;
-  case 2:
-  case 5:
-  case 8:
-    break;
-  case 3:
-  case 6:
-  case 9:
-    next[dim_x]++;
-    break;
-  case '<':
-    if (mappair(d->PC->position) == ter_stairs_up) {
-      was_stairs = 1;
-      new_dungeon_level(d, '<');
-    }
-    break;
-  case '>':
-    if (mappair(d->PC->position) == ter_stairs_down) {
-      was_stairs = 1;
-      new_dungeon_level(d, '>');
-    }
-    break;
+    case 1:
+    case 4:
+    case 7:
+      next[dim_x]--;
+      break;
+    case 2:
+    case 5:
+    case 8:
+      break;
+    case 3:
+    case 6:
+    case 9:
+      next[dim_x]++;
+      break;
+    case '<':
+      if (mappair(d->PC->position) == ter_stairs_up) {
+        was_stairs = 1;
+        new_dungeon_level(d, '<');
+      }
+      break;
+    case '>':
+      if (mappair(d->PC->position) == ter_stairs_down) {
+        was_stairs = 1;
+        new_dungeon_level(d, '>');
+      }
+      break;
   }
 
   if (was_stairs) {
@@ -324,7 +328,7 @@ uint32_t move_pc(dungeon *d, uint32_t dir)
     return 0;
   } else if (mappair(next) < ter_floor) {
     io_queue_message(wallmsg[rand() % (sizeof (wallmsg) /
-                                       sizeof (wallmsg[0]))]);
+          sizeof (wallmsg[0]))]);
     io_display(d);
   }
 

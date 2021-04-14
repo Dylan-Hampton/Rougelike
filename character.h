@@ -20,9 +20,9 @@ class character {
   std::string description;
   char symbol;
   std::vector<uint32_t> color;
-  dice damage;
+  dice damage = *(new dice(1000, 1000, 1000));
   pair_t position;
-  int32_t speed, hitpoints;
+  int32_t speed, hitpoints = 1000;
   uint32_t alive;
   /* Characters use to have a next_turn for the move queue.  Now that it is *
    * an event queue, there's no need for that here.  Instead it's in the    *
