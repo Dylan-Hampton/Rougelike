@@ -378,6 +378,156 @@ void io_display_no_fog(dungeon *d)
   io_print_message_queue(0, 0);
 }
 
+int io_target_monster(dungeon *d) {
+  pair_t dest;
+  int c;
+  int actual;
+
+  pc_reset_visibility(d->PC);
+  io_display_no_fog(d);
+
+  mvprintw(0, 0,
+      "Choose a location.  't' or '.' to inspect monster");
+
+  dest[dim_y] = d->PC->position[dim_y];
+  dest[dim_x] = d->PC->position[dim_x];
+
+  mvaddch(dest[dim_y] + 1, dest[dim_x], '*');
+  refresh();
+
+  while ((c = getch()) != 't' && c != '.') {
+    if (charpair(dest)) {
+      actual = character_get_symbol(charpair(dest));
+    } else {
+      switch (mappair(dest)) {
+        case ter_wall:
+        case ter_wall_immutable:
+          actual = ' ';
+          break;
+        case ter_floor:
+        case ter_floor_room:
+          actual = '.';
+          break;
+        case ter_floor_hall:
+          actual = '#';
+          break;
+        case ter_debug:
+          actual = '*';
+          break;
+        case ter_stairs_up:
+          actual = '<';
+          break;
+        case ter_stairs_down:
+          actual = '>';
+          break;
+        default:
+          break;
+      }      
+    }
+
+    mvaddch(dest[dim_y] + 1, dest[dim_x], actual);
+
+    switch (c) {
+      case '7':
+      case 'y':
+      case KEY_HOME:
+        if (dest[dim_y] > 1) {
+          dest[dim_y]--;
+        }
+        if (dest[dim_x] > 1) {
+          dest[dim_x]--;
+        }
+        break;
+      case '8':
+      case 'k':
+      case KEY_UP:
+        if (dest[dim_y] > 1) {
+          dest[dim_y]--;
+        }
+        break;
+      case '9':
+      case 'u':
+      case KEY_PPAGE:
+        if (dest[dim_y] > 1) {
+          dest[dim_y]--;
+        }
+        if (dest[dim_x] < DUNGEON_X - 2) {
+          dest[dim_x]++;
+        }
+        break;
+      case '6':
+      case 'l':
+      case KEY_RIGHT:
+        if (dest[dim_x] < DUNGEON_X - 2) {
+          dest[dim_x]++;
+        }
+        break;
+      case '3':
+      case 'n':
+      case KEY_NPAGE:
+        if (dest[dim_y] < DUNGEON_Y - 2) {
+          dest[dim_y]++;
+        }
+        if (dest[dim_x] < DUNGEON_X - 2) {
+          dest[dim_x]++;
+        }
+        break;
+      case '2':
+      case 'j':
+      case KEY_DOWN:
+        if (dest[dim_y] < DUNGEON_Y - 2) {
+          dest[dim_y]++;
+        }
+        break;
+      case '1':
+      case 'b':
+      case KEY_END:
+        if (dest[dim_y] < DUNGEON_Y - 2) {
+          dest[dim_y]++;
+        }
+        if (dest[dim_x] > 1) {
+          dest[dim_x]--;
+        }
+        break;
+      case '4':
+      case 'h':
+      case KEY_LEFT:
+        if (dest[dim_x] > 1) {
+          dest[dim_x]--;
+        }
+        break;
+    }
+
+    mvaddch(dest[dim_y] + 1, dest[dim_x], '*');
+    refresh();
+  }
+
+  if (charpair(dest) && charpair(dest) != d->PC) {
+    clear();
+    mvprintw(0, 0, "Press ESC to leave");
+    attron(COLOR_PAIR(d->character_map[dest[dim_y]][dest[dim_x]]->color[0]));
+    mvprintw(1, 0, d->character_map[dest[dim_y]][dest[dim_x]]->name.c_str());
+    attroff(COLOR_PAIR(d->character_map[dest[dim_y]][dest[dim_x]]->color[0]));
+    mvprintw(2, 0, d->character_map[dest[dim_y]][dest[dim_x]]->description.c_str());
+    refresh();
+    int w = 1;
+    while (w) {
+      switch(getch()) {
+        case 27:
+          w--;
+          break;
+        default:
+          break;
+      }
+    }
+  } else {  
+    io_queue_message("There is no monster here");
+  }
+  io_display(d);
+
+  return 0;
+}
+
 void io_list_pc_inv(dungeon *d) {
   clear();
    mvprintw(0, 15, "Player Inventory");
@@ -882,7 +1032,7 @@ void io_handle_input(dungeon *d)
         fail_code = 1;
         break;
       case 'L':
-        //looking at monster
+        io_target_monster(d);
         fail_code = 1;
         break;
       case 'q':
