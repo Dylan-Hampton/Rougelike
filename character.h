@@ -20,7 +20,7 @@ class character {
   std::string description;
   char symbol;
   std::vector<uint32_t> color;
-  dice damage = *(new dice(1000, 1000, 1000));
+  dice damage = *(new dice(0, 0, 0));
   pair_t position;
   int32_t speed, hitpoints = 1000;
   uint32_t alive;

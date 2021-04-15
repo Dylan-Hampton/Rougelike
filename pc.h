@@ -17,6 +17,8 @@ class pc : public character {
 };
 
 int pc_has_killed_boss(dungeon *d);
+void pc_add_item_stats(pc *pc, object *o);
+void pc_remove_item_stats(pc *pc, object *o);
 void pc_expunge_item(pc *pc, int slot);
 int pc_remove_item(pc *pc, int slot);
 int pc_wear_item(pc *pc, int slot);

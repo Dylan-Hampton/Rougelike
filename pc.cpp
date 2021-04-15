@@ -28,6 +28,7 @@ int pc_remove_item(pc *pc, int slot) {
   int inv_size = pc->inventory.size();
   int wear_size = pc->wearing.size();
   if (slot >= 0 && slot < wear_size && inv_size < 10) {
+    pc_remove_item_stats(pc, &pc->wearing[slot]);
     pc->inventory.push_back(pc->wearing[slot]);
     pc->wearing.erase(pc->wearing.begin() + slot);
     return 0;
@@ -53,6 +54,7 @@ int pc_wear_item(pc *pc, int slot) {
 	  return -1;
   }
   if (slot >= 0 && slot < inv_size && wear_size < 10) {
+    pc_add_item_stats(pc, &pc->inventory[slot]);
     pc->wearing.push_back(pc->inventory[slot]);
     pc->inventory.erase(pc->inventory.begin() + slot);
     return 0;
@@ -87,6 +89,23 @@ int pc_grab_item(pc *pc, dungeon *d) { //works, and tested
     d->object_map[character_get_y(pc)][character_get_x(pc)] = NULL;
     return 0;
   }
+}
+
+void pc_add_item_stats(pc *pc, object *o) {
+  pc->speed += o->speed;
+  pc->damage.set_sides(pc->damage.get_sides() + o->damage.get_sides());
+  pc->damage.set_number(pc->damage.get_number() + o->damage.get_number());
+  pc->damage.set_base(pc->damage.get_base() + o->damage.get_base());
+  if (pc->speed < 1) {
+    pc->speed = 1;
+  }
+}
+
+void pc_remove_item_stats(pc *pc, object *o) {
+  pc->speed -= o->speed;
+  pc->damage.set_sides(pc->damage.get_sides() - o->damage.get_sides());
+  pc->damage.set_number(pc->damage.get_number() - o->damage.get_number());
+  pc->damage.set_base(pc->damage.get_base() - o->damage.get_base());
 }
 
 void place_pc(dungeon *d)
