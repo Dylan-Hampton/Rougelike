@@ -40,173 +40,152 @@ typedef enum object_type {
 extern const char object_symbol[];
 
 class monster_description {
- private:
-  std::string name, description;
-  char symbol;
-  std::vector<uint32_t> color;
-  uint32_t abilities;
-  dice speed, hitpoints, damage;
-  uint32_t rarity;
- public:
-  int generated = 0;
-  monster_description() : name(),       description(), symbol(0),   color(0),
-                          abilities(0), speed(),       hitpoints(), damage(),
-                          rarity(0)
+  private:
+    std::string name, description;
+    char symbol;
+    std::vector<uint32_t> color;
+    uint32_t abilities;
+    dice speed, hitpoints, damage;
+    uint32_t rarity;
+  public:
+    int generated = 0;
+    monster_description() : name(),       description(), symbol(0),   color(0),
+    abilities(0), speed(),       hitpoints(), damage(),
+    rarity(0)
   {
   }
-  uint32_t get_abilities() { return abilities; }
-  uint32_t get_rarity() { return rarity; }
-  void set(const std::string &name,
-           const std::string &description,
-           const char symbol,
-           const std::vector<uint32_t> &color,
-           const dice &speed,
-           const uint32_t abilities,
-           const dice &hitpoints,
-           const dice &damage,
-           const uint32_t rarity);
-  std::ostream &print(std::ostream &o);
-  char get_symbol() { return symbol; }
-  npc *get_npc() {
-    npc *m = new npc;
-    m->name = name;
-    m->symbol = symbol;
-    m->description = description;
-    m->color = color;
-    m->damage = damage;
-    m->speed = speed.roll();
-    m->hitpoints = hitpoints.roll();
-    m->characteristics = abilities;
-    return m;
-  }
+    uint32_t get_abilities() { return abilities; }
+    uint32_t get_rarity() { return rarity; }
+    void set(const std::string &name,
+        const std::string &description,
+        const char symbol,
+        const std::vector<uint32_t> &color,
+        const dice &speed,
+        const uint32_t abilities,
+        const dice &hitpoints,
+        const dice &damage,
+        const uint32_t rarity);
+    std::ostream &print(std::ostream &o);
+    char get_symbol() { return symbol; }
+    npc *get_npc() {
+      npc *m = new npc;
+      m->name = name;
+      m->symbol = symbol;
+      m->description = description;
+      m->color = color;
+      m->damage = damage;
+      m->speed = speed.roll();
+      m->hitpoints = hitpoints.roll();
+      m->characteristics = abilities;
+      return m;
+    }
 };
 
 class object {
-public:
-  std::string name, description;
-  char symbol;
-  uint32_t color;
-  dice damage;
-  int hit, dodge, defence, weight, speed, attribute, value;
-  bool artifact;
-  uint32_t rarity;
-  pair_t position;
-  object() {
+  public:
+    std::string name, description;
+    char symbol;
+    uint32_t color;
+    dice damage;
+    int hit, dodge, defence, weight, speed, attribute, value, type;
+    bool artifact;
+    uint32_t rarity;
+    pair_t position;
+    object() {
 
-  }
-  object(const object& o) {
-    name = o.name;
-    description = o.description;
-    symbol = o.symbol;
-    color = o.color;
-    damage= o.damage;
-    hit= o.hit;
-    dodge = o.dodge;
-    defence = o.defence;
-    weight = o.weight;
-    speed = o.speed;
-    attribute = o.attribute;
-    value = o.value;
-    artifact = o.artifact;
-    rarity = o.rarity;
-    for (int i = 0; i < 2; i++) {
-      position[i] = o.position[i];
     }
-  }
- int get_type(){
-	 if(name == "a NERF(R) dagger" || name == "the Vorpal Blade" ||
-	   name == "Mjolnir" || name == "Sting"){
-		 return 0; //WEAPOM
-	 } else if(name == "the Aegis" || name == "the Moon Stick"){
-		 return 1; //OFFHAND
-	 } else if(name == "a prom dress"){
-		 return 2; //ARMOR
-	 } else if(name == "a chainmail coif" || name == "the Moon Tiara"){
-		 return 3; //HELMET
-	 } else if(name == "the cloak of invisibility"){
-		 return 4; //CLOAK
-	 } else if(name == "fingerless gloves"){
-		 return 5; //GLOVES
-	 } else if(name == "a pair of Prada dress sandals"){
-		 return 6; //BOOTS
-	 } else if(name == "the Heart of the Ocean"){
-		 return 7; //AMULET
-	 } else if(name == "a torch" || name == "a Wicked Lasers(R) Torch"){
-		 return 8; //LIGHT
-	 } else {
-		 return 9;
-	 }
-
-	 return -1;
- } 
+    object(const object& o) {
+      name = o.name;
+      description = o.description;
+      type = o.type;
+      symbol = o.symbol;
+      color = o.color;
+      damage= o.damage;
+      hit= o.hit;
+      dodge = o.dodge;
+      defence = o.defence;
+      weight = o.weight;
+      speed = o.speed;
+      attribute = o.attribute;
+      value = o.value;
+      artifact = o.artifact;
+      rarity = o.rarity;
+      for (int i = 0; i < 2; i++) {
+        position[i] = o.position[i];
+      }
+    }
+    int get_type() {
+      return type;
+    }
 };
 
 class object_description {
- private:
-  std::string name, description;
-  object_type_t type;
-  uint32_t color;
-  dice hit, damage, dodge, defence, weight, speed, attribute, value;
-  bool artifact;
-  uint32_t rarity;
- public:
-  int generated = 0;
-  object_description() : name(),    description(), type(objtype_no_type),
-                         color(0),  hit(),         damage(),
-                         dodge(),   defence(),     weight(),
-                         speed(),   attribute(),   value(),
-                         artifact(false), rarity(0)
+  private:
+    std::string name, description;
+    object_type_t type;
+    uint32_t color;
+    dice hit, damage, dodge, defence, weight, speed, attribute, value;
+    bool artifact;
+    uint32_t rarity;
+  public:
+    int generated = 0;
+    object_description() : name(),    description(), type(objtype_no_type),
+    color(0),  hit(),         damage(),
+    dodge(),   defence(),     weight(),
+    speed(),   attribute(),   value(),
+    artifact(false), rarity(0)
   {
   }
-  bool get_artifact() { return artifact; }
-  uint32_t get_rarity() { return rarity; }
-  void set(const std::string &name,
-           const std::string &description,
-           const object_type_t type,
-           const uint32_t color,
-           const dice &hit,
-           const dice &damage,
-           const dice &dodge,
-           const dice &defence,
-           const dice &weight,
-           const dice &speed,
-           const dice &attrubute,
-           const dice &value,
-           const bool artifact,
-           const uint32_t rarity);
-  object *get_object() {
-    object *o = new object;
-    o->name = name;
-    o->symbol = object_symbol[type];
-    o->description = description;
-    o->color = color;
-    o->damage = damage;
-    o->hit = hit.roll();
-    o->dodge = dodge.roll();
-    o->defence = defence.roll();
-    o->weight = weight.roll();
-    o->speed = speed.roll();
-    o->attribute = attribute.roll();
-    o->value = value.roll();
-    o->artifact = artifact;
-    o->rarity = rarity;
-    return o;
-  }
-  std::ostream &print(std::ostream &o);
-  /* Need all these accessors because otherwise there is a *
-   * circular dependancy that is difficult to get around.  */
-  inline const std::string &get_name() const { return name; }
-  inline const std::string &get_description() const { return description; }
-  inline const object_type_t get_type() const { return type; }
-  inline const uint32_t get_color() const { return color; }
-  inline const dice &get_hit() const { return hit; }
-  inline const dice &get_damage() const { return damage; }
-  inline const dice &get_dodge() const { return dodge; }
-  inline const dice &get_defence() const { return defence; }
-  inline const dice &get_weight() const { return weight; }
-  inline const dice &get_speed() const { return speed; }
-  inline const dice &get_attribute() const { return attribute; }
-  inline const dice &get_value() const { return value; }
+    bool get_artifact() { return artifact; }
+    uint32_t get_rarity() { return rarity; }
+    void set(const std::string &name,
+        const std::string &description,
+        const object_type_t type,
+        const uint32_t color,
+        const dice &hit,
+        const dice &damage,
+        const dice &dodge,
+        const dice &defence,
+        const dice &weight,
+        const dice &speed,
+        const dice &attrubute,
+        const dice &value,
+        const bool artifact,
+        const uint32_t rarity);
+    object *get_object() {
+      object *o = new object;
+      o->name = name;
+      o->type = type;
+      o->symbol = object_symbol[type];
+      o->description = description;
+      o->color = color;
+      o->damage = damage;
+      o->hit = hit.roll();
+      o->dodge = dodge.roll();
+      o->defence = defence.roll();
+      o->weight = weight.roll();
+      o->speed = speed.roll();
+      o->attribute = attribute.roll();
+      o->value = value.roll();
+      o->artifact = artifact;
+      o->rarity = rarity;
+      return o;
+    }
+    std::ostream &print(std::ostream &o);
+    /* Need all these accessors because otherwise there is a *
+     * circular dependancy that is difficult to get around.  */
+    inline const std::string &get_name() const { return name; }
+    inline const std::string &get_description() const { return description; }
+    inline const object_type_t get_type() const { return type; }
+    inline const uint32_t get_color() const { return color; }
+    inline const dice &get_hit() const { return hit; }
+    inline const dice &get_damage() const { return damage; }
+    inline const dice &get_dodge() const { return dodge; }
+    inline const dice &get_defence() const { return defence; }
+    inline const dice &get_weight() const { return weight; }
+    inline const dice &get_speed() const { return speed; }
+    inline const dice &get_attribute() const { return attribute; }
+    inline const dice &get_value() const { return value; }
 };
 
 std::ostream &operator<<(std::ostream &o, monster_description &m);

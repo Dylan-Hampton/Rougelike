@@ -551,9 +551,9 @@ void io_list_pc_wearing(dungeon *d) {
   for (int i = 0; i < 10; i++) {
     int size = d->PC->wearing.size(); 
     if (i < size) {
-      attron(COLOR_PAIR(d->PC->inventory[i].color));
+      attron(COLOR_PAIR(d->PC->wearing[i].color));
       mvprintw(i + 2, 15, d->PC->wearing[i].name.c_str());
-      attroff(COLOR_PAIR(d->PC->inventory[i].color));
+      attroff(COLOR_PAIR(d->PC->wearing[i].color));
     } else {
       mvprintw(i + 2, 15, "empty slot");
     }

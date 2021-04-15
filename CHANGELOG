@@ -1,3 +1,4 @@
+4/15/21 BN/DH: fixed buggy equipment limiting code
 4/14/21 CB: Limited equipment based off type
 4/14/21 BN/DH: made inspect monster method, implemented damage and hp based combat, made so monsters can't kill eachother
 4/13/21 BN/DH: fixed bug where we couldn't see items after we placed them somewhere else, also made expunge, remove and wear item methods, made pc item methods that needed slots, amde those work, added colors to the menus, added killing spongebob as the win condition

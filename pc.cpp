@@ -19,7 +19,7 @@ int pc_has_killed_boss(dungeon *d) {
 }
 
 void pc_expunge_item(pc *pc, int slot) { 
-  if (slot > 0 && pc->inventory.size() > 0) {
+  if (slot >= 0 && pc->inventory.size() > 0) {
     pc->inventory.erase(pc->inventory.begin() + slot);
   }
 }
@@ -27,7 +27,7 @@ void pc_expunge_item(pc *pc, int slot) {
 int pc_remove_item(pc *pc, int slot) {
   int inv_size = pc->inventory.size();
   int wear_size = pc->wearing.size();
-  if (slot > 0 && slot < wear_size && inv_size < 10) {
+  if (slot >= 0 && slot < wear_size && inv_size < 10) {
     pc->inventory.push_back(pc->wearing[slot]);
     pc->wearing.erase(pc->wearing.begin() + slot);
     return 0;
@@ -40,20 +40,19 @@ int pc_wear_item(pc *pc, int slot) {
   int wear_size = pc->wearing.size();
   int ring_count = 0;
   for(int i = 0; i < wear_size; i++){
-	if(pc->inventory[slot].get_type() == pc->wearing[i].get_type())
-	{
-		if(pc->inventory[slot].get_type() == 9){
-			ring_count++;
-		} else {
-			return -1;
-		}
-		
-	}	
+    if(pc->inventory[slot].get_type() == pc->wearing[i].get_type())
+    {
+      if(pc->inventory[slot].get_type() == objtype_RING){
+        ring_count++;
+      } else {
+        return -1;
+      }
+    }	
   }
   if(ring_count == 2){
 	  return -1;
   }
-  if (slot > 0 && slot < inv_size && wear_size < 10) {
+  if (slot >= 0 && slot < inv_size && wear_size < 10) {
     pc->wearing.push_back(pc->inventory[slot]);
     pc->inventory.erase(pc->inventory.begin() + slot);
     return 0;
