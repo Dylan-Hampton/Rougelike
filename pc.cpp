@@ -38,6 +38,21 @@ int pc_remove_item(pc *pc, int slot) {
 int pc_wear_item(pc *pc, int slot) {
   int inv_size = pc->inventory.size();
   int wear_size = pc->wearing.size();
+  int ring_count = 0;
+  for(int i = 0; i < wear_size; i++){
+	if(pc->inventory[slot].get_type() == pc->wearing[i].get_type())
+	{
+		if(pc->inventory[slot].get_type() == 9){
+			ring_count++;
+		} else {
+			return -1;
+		}
+		
+	}	
+  }
+  if(ring_count == 2){
+	  return -1;
+  }
   if (slot > 0 && slot < inv_size && wear_size < 10) {
     pc->wearing.push_back(pc->inventory[slot]);
     pc->inventory.erase(pc->inventory.begin() + slot);

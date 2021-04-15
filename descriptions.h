@@ -113,6 +113,32 @@ public:
       position[i] = o.position[i];
     }
   }
+ int get_type(){
+	 if(name == "a NERF(R) dagger" || name == "the Vorpal Blade" ||
+	   name == "Mjolnir" || name == "Sting"){
+		 return 0; //WEAPOM
+	 } else if(name == "the Aegis" || name == "the Moon Stick"){
+		 return 1; //OFFHAND
+	 } else if(name == "a prom dress"){
+		 return 2; //ARMOR
+	 } else if(name == "a chainmail coif" || name == "the Moon Tiara"){
+		 return 3; //HELMET
+	 } else if(name == "the cloak of invisibility"){
+		 return 4; //CLOAK
+	 } else if(name == "fingerless gloves"){
+		 return 5; //GLOVES
+	 } else if(name == "a pair of Prada dress sandals"){
+		 return 6; //BOOTS
+	 } else if(name == "the Heart of the Ocean"){
+		 return 7; //AMULET
+	 } else if(name == "a torch" || name == "a Wicked Lasers(R) Torch"){
+		 return 8; //LIGHT
+	 } else {
+		 return 9;
+	 }
+
+	 return -1;
+ } 
 };
 
 class object_description {
